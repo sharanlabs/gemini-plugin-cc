@@ -51,6 +51,8 @@ test('CLI request files keep shell text inert and return real structured result'
   assert.equal(result.status, 'completed');
   assert.equal(result.response, 'Verified answer.');
   assert.equal(result.runToken, undefined);
+  assert.equal(typeof result.resumeDirectory, 'string');
+  assert.match(result.resumeCommand, /^gemini --resume 'session-123'$/);
   await assert.rejects(readFile(marker));
 });
 

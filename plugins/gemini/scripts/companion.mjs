@@ -70,7 +70,10 @@ function presentJob(job) {
     appliedAt: job.appliedAt,
     cleanedAt: job.cleanedAt,
     cancellationRequested: job.cancellationRequested,
-    resumeCommand: job.sessionId ? `gemini --resume ${job.sessionId}` : undefined,
+    resumeDirectory: job.sessionId ? job.worktree || job.workspace : undefined,
+    resumeCommand: job.sessionId
+      ? `gemini --resume '${job.sessionId.replaceAll("'", "'\"'\"'")}'`
+      : undefined,
   };
 }
 
@@ -159,7 +162,8 @@ export function render(value) {
       value.cancellationRequested && 'Cancellation requested; use status to confirm.',
       value.error && `Error: ${value.error}`,
       value.response && `\n${value.response}`,
-      value.resumeCommand && `\nContinue directly: ${value.resumeCommand}`,
+      value.resumeCommand &&
+        `\nContinue directly from ${value.resumeDirectory}: ${value.resumeCommand}`,
     ]
       .filter(Boolean)
       .join('\n');
