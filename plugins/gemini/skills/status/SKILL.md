@@ -1,7 +1,7 @@
 ---
 name: status
 description: Inspect Gemini job status without contacting Google; use while a delegated task is running.
-argument-hint: "[<job-id>]"
+argument-hint: '[<job-id>]'
 ---
 
 Use `command:"status"` with `cwd`. Add `jobId` when supplied; otherwise show the runtime's project-scoped job summary. Read status only: do not start another Gemini request.

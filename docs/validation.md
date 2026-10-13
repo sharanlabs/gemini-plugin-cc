@@ -6,10 +6,10 @@ Local environment: macOS, Node 24.21.0, npm 11.19.0, Claude Code 2.1.296. The of
 
 ## Results
 
-- Full automated suite with the real upstream policy/sandbox package: **68 passed, 0 failed, 0 skipped**.
-- Default offline suite: **66 passed, 0 failed, 2 upstream-package checks skipped**. `npm run test:upstream` runs those checks with the actual pinned package; on macOS all **21 runtime tests passed**.
+- Full automated suite with the real upstream policy/sandbox package: **70 passed, 0 failed, 0 skipped**.
+- Default offline suite: **68 passed, 0 failed, 2 upstream-package checks skipped**. `npm run test:upstream` runs those checks with the actual pinned package; on macOS all **21 runtime tests passed**.
 - `npm run check`: JavaScript syntax and JSON validation passed.
-- Claude plugin validation passed for marketplace, plugin, skills and agents.
+- Claude plugin validation passed for marketplace, plugin, skills and agents. Real marketplace registration and plugin installation also succeeded inside an isolated temporary `CLAUDE_CONFIG_DIR`; normal user settings were not changed.
 - Actual packaged CLI `--version`/`--help` probe: 0.63.0 with all required capabilities. This was a non-model invocation.
 - Detached-worker integration exercised launcher exit, status polling and cancellation of the actual fake-Gemini subprocess. Runtime tests also verified descendant process-group termination.
 - Real temporary Git repositories exercised staged/unstaged/untracked snapshots, merge-base reviews, staged and unstaged deletions, source drift, symlink ancestors, incremental patch application and staging preservation.
@@ -20,7 +20,7 @@ Local environment: macOS, Node 24.21.0, npm 11.19.0, Claude Code 2.1.296. The of
 
 No cached Gemini Google OAuth sign-in existed on the build machine. No authenticated model request, account quota entitlement, real model review quality, or live Claude-to-Gemini workflow was claimed. Use the README live smoke test after signing in. No credentials were requested, copied, read or committed.
 
-Node 20/22 and Linux coverage is delegated to the checked-in GitHub CI matrix; this local record does not pre-claim remote results. Windows and Linux shell delegation are unsupported. macOS sandbox tests establish specific tested boundaries, not complete security or confidentiality.
+GitHub CI succeeded on the initial implementation for Node 20, 22 and 24 on Ubuntu and macOS, including a separate upstream-policy/sandbox job: https://github.com/sharanlabs/gemini-plugin-cc/actions/runs/38463905158 . The latest revision is independently checked by the current CI run. Windows and Linux shell delegation are unsupported. macOS sandbox tests establish specific tested boundaries, not complete security or confidentiality.
 
 A stale heartbeat is shown as unresponsive while the worker may still be alive; only a verified dead PID becomes a persisted interrupted job. A hard-killed worker may leave an exclusive-operation lock. The error identifies the exact lock for inspection; never remove a lock until its owner is confirmed dead. Dirty task worktrees and committed task results are retained rather than force-deleted.
 

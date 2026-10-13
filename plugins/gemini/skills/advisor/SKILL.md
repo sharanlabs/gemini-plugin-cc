@@ -1,7 +1,7 @@
 ---
 name: advisor
 description: Delegate a decision to an independent Gemini advisor who compares feasible options, ranks evidence and trade-offs, and recommends a course.
-argument-hint: "[--model <id>] [--background] <decision, options, constraints>"
+argument-hint: '[--model <id>] [--background] <decision, options, constraints>'
 ---
 
 Use `command:"advisor"`, a precise decision `prompt`, and project `cwd`. Include the goal, constraints, evidence, viable options, and the outcome the user needs. Present your preferred option only as a hypothesis, after the objective and constraints.

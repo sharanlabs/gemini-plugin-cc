@@ -1,7 +1,7 @@
 ---
 name: adversarial-review
 description: Have Gemini challenge assumptions, architecture, trade-offs, security boundaries, and failure modes as an independent adversarial specialist.
-argument-hint: "[--base <git-ref>] [--model <id>] [--background] <risk or decision to challenge>"
+argument-hint: '[--base <git-ref>] [--model <id>] [--background] <risk or decision to challenge>'
 ---
 
 Use `command:"adversarial-review"`, `cwd`, and a precise challenge in `focus` or `prompt`. Optional fields are `base`, `model`, `background`, and `timeoutMs`. Omit `base` for working changes. This workflow makes no source edits.

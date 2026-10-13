@@ -1,7 +1,7 @@
 ---
 name: judge
 description: Delegate acceptance evaluation to an independent Gemini judge; assess work against explicit criteria and source evidence.
-argument-hint: "[--model <id>] [--background] <work and acceptance criteria>"
+argument-hint: '[--model <id>] [--background] <work and acceptance criteria>'
 ---
 
 Use `command:"judge"`, a self-contained `prompt`, and the project `cwd`. Include the work being evaluated, intended outcome, acceptance criteria, relevant files, and available validation evidence. If criteria are missing, derive a provisional rubric and label it; do not invent the user's priorities.

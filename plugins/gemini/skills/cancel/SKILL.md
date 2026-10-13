@@ -1,7 +1,7 @@
 ---
 name: cancel
 description: Cancel a specific Gemini companion background job and retain its recorded output for inspection.
-argument-hint: "<job-id>"
+argument-hint: '<job-id>'
 ---
 
 Use `command:"cancel"`, `cwd`, and an explicit `jobId`. If omitted, inspect status and identify the intended job before cancelling; never cancel every job or an unrelated Gemini process.

@@ -1,7 +1,7 @@
 ---
 name: result
 description: Retrieve a Gemini job's saved result, findings, session ID, or isolated patch after completion.
-argument-hint: "[<job-id>]"
+argument-hint: '[<job-id>]'
 ---
 
 Use `command:"result"`, `cwd`, and `jobId` if supplied. Without an ID, use the runtime's project-scoped selection. Do not guess a Gemini session ID or contact Google to reconstruct output.

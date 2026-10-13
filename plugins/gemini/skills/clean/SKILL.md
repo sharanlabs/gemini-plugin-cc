@@ -1,7 +1,7 @@
 ---
 name: clean
 description: Remove an explicitly selected Gemini job's clean managed worktree when no longer needed.
-argument-hint: "<job-id>"
+argument-hint: '<job-id>'
 disable-model-invocation: true
 ---
 

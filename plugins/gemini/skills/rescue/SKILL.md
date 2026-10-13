@@ -1,7 +1,7 @@
 ---
 name: rescue
 description: Delegate debugging, research, or implementation to an independent Gemini specialist; edits run in an isolated Git worktree.
-argument-hint: "[--edit] [--background] [--resume <job-id>] [--fresh] [--model <id>] <task>"
+argument-hint: '[--edit] [--background] [--resume <job-id>] [--fresh] [--model <id>] <task>'
 ---
 
 Use `command:"rescue"`, `cwd`, and a concrete `prompt`. Give Gemini the goal, acceptance criteria, observed failure, constraints, evidence, and required validation. Optional fields are `model`, `background`, `timeoutMs`, and exactly one of `resume` (explicit job ID) or `fresh:true`.

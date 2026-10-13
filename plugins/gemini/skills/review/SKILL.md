@@ -1,7 +1,7 @@
 ---
 name: review
 description: Delegate an independent code review to Gemini; use on working changes or a branch before accepting an implementation.
-argument-hint: "[--base <git-ref>] [--focus <text>] [--model <id>] [--background]"
+argument-hint: '[--base <git-ref>] [--focus <text>] [--model <id>] [--background]'
 ---
 
 Use `command:"review"` and the repository `cwd`. Omit `base` to review working changes; include an explicit `base` for a branch comparison. Optional fields are `focus`, `model`, `background`, and `timeoutMs`. No edits.

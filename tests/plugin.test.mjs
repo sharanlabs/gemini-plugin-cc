@@ -6,7 +6,22 @@ import path from 'node:path';
 
 const root = fileURLToPath(new URL('../', import.meta.url));
 const pluginRoot = path.join(root, 'plugins/gemini');
-const commands = ['setup', 'ask', 'review', 'adversarial-review', 'rescue', 'transfer', 'status', 'result', 'cancel', 'apply', 'clean', 'gate', 'judge', 'advisor'];
+const commands = [
+  'setup',
+  'ask',
+  'review',
+  'adversarial-review',
+  'rescue',
+  'transfer',
+  'status',
+  'result',
+  'cancel',
+  'apply',
+  'clean',
+  'gate',
+  'judge',
+  'advisor',
+];
 const json = async (filename) => JSON.parse(await readFile(path.join(root, filename), 'utf8'));
 const document = (filename) => readFile(path.join(root, filename), 'utf8');
 
@@ -25,7 +40,8 @@ test('manifest identifies an unofficial community plugin without hidden services
   assert.match(manifest.version, /^\d+\.\d+\.\d+$/);
   assert.match(manifest.description, /unofficial/i);
   assert.equal(manifest.license, 'Apache-2.0');
-  for (const field of ['hooks', 'mcpServers', 'settings', 'dependencies']) assert.equal(manifest[field], undefined);
+  for (const field of ['hooks', 'mcpServers', 'settings', 'dependencies'])
+    assert.equal(manifest[field], undefined);
 });
 
 test('all public capabilities have one discoverable skill', async () => {
@@ -60,12 +76,22 @@ test('apply and cleanup remain explicit user actions', async () => {
 
 test('independent specialist agents delegate model work through skills', async () => {
   const agents = await readdir(path.join(pluginRoot, 'agents'));
-  assert.deepEqual(agents.sort(), ['adversarial-reviewer.md', 'advisor.md', 'implementer.md', 'investigator.md', 'judge.md', 'reviewer.md']);
+  assert.deepEqual(agents.sort(), [
+    'adversarial-reviewer.md',
+    'advisor.md',
+    'implementer.md',
+    'investigator.md',
+    'judge.md',
+    'reviewer.md',
+  ]);
   for (const filename of agents) {
     const agent = await document(`plugins/gemini/agents/${filename}`);
     assert.match(agent, /^name: .+/m, filename);
     assert.match(agent, /^tools: .*Skill/m, filename);
-    assert.ok(!/^model: gemini/m.test(agent), `${filename} must not claim native Gemini subagent support`);
+    assert.ok(
+      !/^model: gemini/m.test(agent),
+      `${filename} must not claim native Gemini subagent support`,
+    );
     assert.match(agent, /Gemini CLI/);
     assert.match(agent, /evidence/i);
   }

@@ -1,7 +1,7 @@
 ---
 name: transfer
 description: Hand a self-contained task summary to a resumable Gemini CLI session for independent continuation.
-argument-hint: "[--background] <handoff summary>"
+argument-hint: '[--background] <handoff summary>'
 ---
 
 Use `command:"transfer"`, `cwd`, and a self-contained `prompt`. Optional fields are `model`, `background`, and `timeoutMs`. The runtime returns a separate Gemini session; show its actual continuation command when available.

@@ -1,7 +1,7 @@
 ---
 name: setup
 description: Check Gemini companion prerequisites and explain Google sign-in; use when installing or diagnosing authentication.
-argument-hint: "[--check-auth]"
+argument-hint: '[--check-auth]'
 disable-model-invocation: true
 ---
 

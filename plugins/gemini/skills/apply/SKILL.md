@@ -1,7 +1,7 @@
 ---
 name: apply
 description: Apply a reviewed isolated Gemini implementation patch to its source repository; explicit user action only.
-argument-hint: "<job-id>"
+argument-hint: '<job-id>'
 disable-model-invocation: true
 ---
 

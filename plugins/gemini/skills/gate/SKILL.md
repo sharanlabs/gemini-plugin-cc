@@ -1,7 +1,7 @@
 ---
 name: gate
 description: Explicitly enable or disable an automatic Gemini review before Claude stops in the current project.
-argument-hint: "on | off"
+argument-hint: 'on | off'
 disable-model-invocation: true
 ---
 

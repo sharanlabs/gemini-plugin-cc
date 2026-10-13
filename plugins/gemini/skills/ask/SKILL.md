@@ -1,7 +1,7 @@
 ---
 name: ask
 description: Ask Gemini for an independent second opinion, design comparison, explanation, or investigation using project context.
-argument-hint: "[--model <id>] [--background] <question>"
+argument-hint: '[--model <id>] [--background] <question>'
 ---
 
 Build a request with `command:"ask"`, a focused `prompt`, and `cwd`. Optional fields are `model`, `background`, and `timeoutMs`. Ask starts an independent request. Use `gemini:rescue --resume <job-id>` to continue an existing rescue task; never guess a session ID.

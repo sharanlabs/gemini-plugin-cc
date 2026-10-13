@@ -6,11 +6,5 @@
     "name": "Gemini Companion contributors"
   },
   "license": "Apache-2.0",
-  "keywords": [
-    "gemini",
-    "code-review",
-    "adversarial-review",
-    "delegation",
-    "oauth"
-  ]
+  "keywords": ["gemini", "code-review", "adversarial-review", "delegation", "oauth"]
 }

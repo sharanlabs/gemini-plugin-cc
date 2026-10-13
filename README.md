@@ -10,19 +10,19 @@ Claude delegates a concrete task through a plugin skill. The Node runtime builds
 
 The six plugin agents are Claude-side coordinators: `gemini:reviewer`, `gemini:adversarial-reviewer`, `gemini:judge`, `gemini:advisor`, `gemini:investigator`, and `gemini:implementer`. They send substantive model work to Gemini CLI. A Claude agent's model field is not changed to Gemini.
 
-| Capability | Behavior |
-| --- | --- |
-| Independent second opinion | Ask Gemini to analyze a problem, compare designs, or investigate evidence. |
-| Code review | Review working changes or a branch against an explicit Git base. |
-| Adversarial review | Challenge assumptions, architecture, trust boundaries, trade-offs, and failure modes. |
-| Independent judge | Evaluate work against acceptance criteria with PASS, FAIL, or BLOCKED verdicts and evidence. |
-| Independent advisor | Compare feasible approaches, rank trade-offs, and recommend a decision with confidence and validation. |
-| Debugging and implementation | Investigate without edits, or edit in a retained isolated linked Git worktree. |
-| Task continuation | Resume an explicit prior rescue job in its Gemini session. |
-| Task handoff | Send a self-contained summary and receive a separate Gemini session. |
-| Background jobs | Start, inspect, retrieve, time out, and cancel delegated work. |
-| Reviewed patch application | Apply an eligible isolated patch after source-state and conflict checks. |
-| Optional completion gate | Explicitly enable one bounded Gemini review when Claude stops; off by default. |
+| Capability                   | Behavior                                                                                               |
+| ---------------------------- | ------------------------------------------------------------------------------------------------------ |
+| Independent second opinion   | Ask Gemini to analyze a problem, compare designs, or investigate evidence.                             |
+| Code review                  | Review working changes or a branch against an explicit Git base.                                       |
+| Adversarial review           | Challenge assumptions, architecture, trust boundaries, trade-offs, and failure modes.                  |
+| Independent judge            | Evaluate work against acceptance criteria with PASS, FAIL, or BLOCKED verdicts and evidence.           |
+| Independent advisor          | Compare feasible approaches, rank trade-offs, and recommend a decision with confidence and validation. |
+| Debugging and implementation | Investigate without edits, or edit in a retained isolated linked Git worktree.                         |
+| Task continuation            | Resume an explicit prior rescue job in its Gemini session.                                             |
+| Task handoff                 | Send a self-contained summary and receive a separate Gemini session.                                   |
+| Background jobs              | Start, inspect, retrieve, time out, and cancel delegated work.                                         |
+| Reviewed patch application   | Apply an eligible isolated patch after source-state and conflict checks.                               |
+| Optional completion gate     | Explicitly enable one bounded Gemini review when Claude stops; off by default.                         |
 
 Transfer sends supplied task context; it does not import a native Claude transcript, live tool state, or conversation permissions. Model access and quota come from your Google account. A paid Gemini subscription does not guarantee every model or unlimited CLI use. See Google's [authentication guide](https://geminicli.com/docs/get-started/authentication/) and [quota and pricing](https://geminicli.com/docs/resources/quota-and-pricing/).
 
@@ -53,14 +53,14 @@ From this repository's root, load the plugin for a development session:
 claude --plugin-dir ./plugins/gemini
 ```
 
-For a persistent local installation, register this repository as a marketplace and install the plugin:
+For a persistent installation, register the GitHub repository as a marketplace and install the plugin (the repository is private, so GitHub access is required):
 
 ```sh
-claude plugin marketplace add .
+claude plugin marketplace add sharanlabs/gemini-plugin-cc
 claude plugin install gemini@gemini-companion
 ```
 
-Start a new Claude Code session, then run:
+You can use `claude plugin marketplace add .` from the local repository instead. Start a new Claude Code session, then run:
 
 ```text
 /gemini:setup
@@ -91,7 +91,7 @@ Setup checks installation and CLI capabilities. By default it does not contact G
 
 You can also ask Claude to delegate naturally: “Have Gemini independently challenge this design” or “Use the Gemini investigator to diagnose this failure.” The review and investigation skills are available to Claude when relevant. Setup, patch application, cleanup, and review-gate settings require an explicit user invocation.
 
-Model selection is optional: add `--model <model-id>` to a delegated task. Omitting it leaves selection to Gemini CLI and your account. No model ID is silently substituted. Use `--background` for long tasks; foreground is the default. `--timeout-ms` takes milliseconds, from 1,000 to 3,600,000; the default is 600,000.
+Model selection is optional: add `--model <model-id>` to a delegated task. Omitting it leaves selection to Gemini CLI and your account. The plugin passes your requested model ID to Gemini CLI without substituting one; Gemini CLI retains its own routing behavior and account restrictions. Use `--background` for long tasks; foreground is the default. `--timeout-ms` takes milliseconds, from 1,000 to 3,600,000; the default is 600,000.
 
 Add `--web` when the task requires Gemini's web search and page-fetch tools. These tools are off by default. Their requests can send task-derived text to remote services; retrieved pages remain untrusted evidence.
 

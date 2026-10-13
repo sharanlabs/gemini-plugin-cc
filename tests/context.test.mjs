@@ -6,7 +6,11 @@ import { join } from 'node:path';
 import { execFile } from 'node:child_process';
 import { promisify } from 'node:util';
 import {
-  resolveWorkspace, collectContext, createTaskWorktree, inspectTaskChanges, removeTaskWorktree,
+  resolveWorkspace,
+  collectContext,
+  createTaskWorktree,
+  inspectTaskChanges,
+  removeTaskWorktree,
 } from '../plugins/gemini/scripts/lib/context.mjs';
 
 const exec = promisify(execFile);
@@ -36,7 +40,10 @@ test('resolveWorkspace resolves repository root from a nested directory', async 
   await mkdir(nested);
   const result = await resolveWorkspace(nested);
   assert.equal(result.git, true);
-  assert.equal(await git(result.root, 'rev-parse', '--show-toplevel'), await git(root, 'rev-parse', '--show-toplevel'));
+  assert.equal(
+    await git(result.root, 'rev-parse', '--show-toplevel'),
+    await git(root, 'rev-parse', '--show-toplevel'),
+  );
 });
 
 test('non-repository context is bounded and identifies its limitation', async (t) => {
@@ -66,12 +73,18 @@ test('review includes staged, unstaged and safe untracked source changes', async
 });
 
 test('review filters credential files, symlinks and binary data and redacts recognizable secrets', async (t) => {
-  const { root } = await fixture(t, { 'app.js': 'export const value = 1;\n', '.env.production': 'PRIVATE=old\n' });
+  const { root } = await fixture(t, {
+    'app.js': 'export const value = 1;\n',
+    '.env.production': 'PRIVATE=old\n',
+  });
   await writeFile(join(root, '.env.production'), 'PRIVATE=do-not-send-env\n');
   await writeFile(join(root, 'private.pem'), 'do-not-send-private-key\n');
   await writeFile(join(root, 'payload.js'), Buffer.from([0, 1, 2, 3]));
   await symlink(join(root, '.env.production'), join(root, 'link.js'));
-  await writeFile(join(root, 'app.js'), 'const API_KEY = "do-not-send-token";\nconst header = "Bearer fake-bearer-credential";\n');
+  await writeFile(
+    join(root, 'app.js'),
+    'const API_KEY = "do-not-send-token";\nconst header = "Bearer fake-bearer-credential";\n',
+  );
   const result = await collectContext({ cwd: root, mode: 'review' });
   assert.doesNotMatch(result.text, /do-not-send|fake-bearer-credential/);
   assert.doesNotMatch(result.text, /PRIVATE=|PRIVATE KEY|\u0000/);
@@ -133,12 +146,18 @@ test('isolated task worktree preserves staged and unstaged source changes and sa
   await assert.rejects(lstat(join(result.root, '.env.local')), { code: 'ENOENT' });
   assert.equal(await git(root, 'status', '--porcelain=v1', '--untracked-files=all'), before);
   assert.equal(await readFile(join(root, 'app.js'), 'utf8'), 'export const value = 3;\n');
-  await assert.rejects(removeTaskWorktree({ sourceRoot: root, root: result.root }), /dirty|changes/i);
+  await assert.rejects(
+    removeTaskWorktree({ sourceRoot: root, root: result.root }),
+    /dirty|changes/i,
+  );
   assert.equal((await lstat(result.root)).isDirectory(), true);
 });
 
 test('worktree creation refuses credential changes, symlinks, occupied or nested destinations', async (t) => {
-  const { root, outer, destination } = await fixture(t, { 'app.js': 'one\n', '.env': 'SECRET=old\n' });
+  const { root, outer, destination } = await fixture(t, {
+    'app.js': 'one\n',
+    '.env': 'SECRET=old\n',
+  });
   await writeFile(join(root, '.env'), 'SECRET=new\n');
   await assert.rejects(createTaskWorktree({ cwd: root, destination }), /credential|sensitive/i);
   await git(root, 'checkout', '--', '.env');
@@ -148,9 +167,15 @@ test('worktree creation refuses credential changes, symlinks, occupied or nested
   await git(root, 'reset', '--', 'linked.js');
   await rm(join(root, 'linked.js'));
   await assert.rejects(createTaskWorktree({ cwd: root, destination: root }), /destination|source/i);
-  await assert.rejects(createTaskWorktree({ cwd: root, destination: join(root, 'task') }), /destination|source/i);
+  await assert.rejects(
+    createTaskWorktree({ cwd: root, destination: join(root, 'task') }),
+    /destination|source/i,
+  );
   await mkdir(join(outer, 'occupied'));
-  await assert.rejects(createTaskWorktree({ cwd: root, destination: join(outer, 'occupied') }), /exist|occupied/i);
+  await assert.rejects(
+    createTaskWorktree({ cwd: root, destination: join(outer, 'occupied') }),
+    /exist|occupied/i,
+  );
 });
 
 test('inspection reports tracked and safe untracked task changes', async (t) => {
@@ -196,7 +221,11 @@ test('task inspection includes commits made after the snapshot and removal prese
 });
 
 test('dirty snapshots preserve tracked binary modifications, deletions and new staged files exactly', async (t) => {
-  const { root, destination } = await fixture(t, { 'app.js': 'one\n', 'remove.js': 'remove\n', 'asset.bin': Buffer.from([0, 1, 2, 3]) });
+  const { root, destination } = await fixture(t, {
+    'app.js': 'one\n',
+    'remove.js': 'remove\n',
+    'asset.bin': Buffer.from([0, 1, 2, 3]),
+  });
   await writeFile(join(root, 'asset.bin'), Buffer.from([0, 4, 5, 6]));
   await rm(join(root, 'remove.js'));
   await writeFile(join(root, 'staged.js'), 'staged\n');
@@ -204,8 +233,14 @@ test('dirty snapshots preserve tracked binary modifications, deletions and new s
   await writeFile(join(root, 'asset.bin'), Buffer.from([0, 7, 8, 9]));
   await writeFile(join(root, 'staged.js'), 'unstaged\n');
   const task = await createTaskWorktree({ cwd: root, destination });
-  assert.equal(await git(task.root, 'diff', '--cached', '--binary', '--full-index'), await git(root, 'diff', '--cached', '--binary', '--full-index'));
-  assert.equal(await git(task.root, 'diff', '--binary', '--full-index'), await git(root, 'diff', '--binary', '--full-index'));
+  assert.equal(
+    await git(task.root, 'diff', '--cached', '--binary', '--full-index'),
+    await git(root, 'diff', '--cached', '--binary', '--full-index'),
+  );
+  assert.equal(
+    await git(task.root, 'diff', '--binary', '--full-index'),
+    await git(root, 'diff', '--binary', '--full-index'),
+  );
   assert.deepEqual(await readFile(join(task.root, 'asset.bin')), Buffer.from([0, 7, 8, 9]));
 });
 
