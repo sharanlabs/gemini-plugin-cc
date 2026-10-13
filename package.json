@@ -1,0 +1,16 @@
+{
+  "name": "gemini-plugin-cc",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Independent Gemini specialists inside Claude Code using Google sign-in.",
+  "license": "Apache-2.0",
+  "engines": { "node": ">=20.0.0" },
+  "scripts": {
+    "test": "node --test tests/*.test.mjs",
+    "test:upstream": "node scripts/verify-upstream.mjs",
+    "check": "node scripts/check.mjs",
+    "validate:claude": "claude plugin validate plugins/gemini",
+    "pack": "node scripts/pack.mjs"
+  }
+}

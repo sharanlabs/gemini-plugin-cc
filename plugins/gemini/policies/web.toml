@@ -1,0 +1,5 @@
+# Loaded only on explicit web opt-in; built-in discovery is also restricted.
+[[rule]]
+toolName = ["google_web_search", "web_fetch"]
+decision = "allow"
+priority = 998

@@ -1,0 +1,16 @@
+# Defense in depth. The runtime also restricts discovery through tools.core.
+[[rule]]
+toolName = "*"
+decision = "deny"
+priority = 997
+
+[[rule]]
+toolName = ["read_file", "list_directory", "grep_search", "glob"]
+decision = "allow"
+priority = 998
+
+[[rule]]
+toolName = ["read_file", "write_file", "replace"]
+argsPattern = '"file_path"\s*:\s*"[^"]*(\.env|oauth_creds\.json|gemini-credentials\.json|credentials\.json|\.pem|\.key)'
+decision = "deny"
+priority = 999

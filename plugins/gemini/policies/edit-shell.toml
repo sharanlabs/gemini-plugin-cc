@@ -1,0 +1,23 @@
+# Explicit opt-in only: Gemini's per-tool macOS sandbox retains outer CLI OAuth.
+# Network is disabled by the upstream default tool sandbox policy.
+[[rule]]
+toolName = "*"
+decision = "deny"
+priority = 997
+
+[[rule]]
+toolName = ["read_file", "list_directory", "grep_search", "glob", "replace", "write_file", "run_shell_command"]
+decision = "allow"
+priority = 998
+
+[[rule]]
+toolName = "run_shell_command"
+argsPattern = '"additional_permissions"\s*:|"is_background"\s*:\s*true'
+decision = "deny"
+priority = 999
+
+[[rule]]
+toolName = ["read_file", "write_file", "replace"]
+argsPattern = '"file_path"\s*:\s*"[^"]*(\.env|oauth_creds\.json|gemini-credentials\.json|credentials\.json|\.pem|\.key)'
+decision = "deny"
+priority = 999
