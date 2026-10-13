@@ -91,3 +91,18 @@ test('unstaged directory deletion produces a deletion patch', async () => {
   await rm(join(root, 'nested'), { recursive: true });
   assert.match(await makePatch(root, base), /deleted file mode/);
 });
+
+test('unchanged tracked assistant settings are preserved as opaque Git objects', async () => {
+  const root = await repo();
+  await mkdir(join(root, '.claude'));
+  await writeFile(join(root, '.claude', 'settings.json'), '{}\n');
+  git(root, 'add', '.');
+  git(root, 'commit', '-qm', 'assistant settings');
+  const base = await captureTree(root);
+  await writeFile(join(root, 'a.txt'), 'implementation\n');
+  const patch = await makePatch(root, base);
+  assert.match(patch, /implementation/);
+  assert.doesNotMatch(patch, /\.claude/);
+  await writeFile(join(root, '.claude', 'settings.json'), '{"changed":true}\n');
+  await assert.rejects(captureTree(root), /settings.*changed/i);
+});

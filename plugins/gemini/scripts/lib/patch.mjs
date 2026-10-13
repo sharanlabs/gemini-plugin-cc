@@ -50,11 +50,33 @@ export async function git(cwd, args, { env, input } = {}) {
 async function entries(cwd) {
   const listing = await git(cwd, ['ls-files', '-z', '--cached', '--others', '--exclude-standard']);
   const paths = [...new Set(listing.split('\0').filter(Boolean))].sort();
+  const assistantSettings = (path) => /(?:^|\/)(?:\.claude|\.codex|\.gemini)(?:\/|$)/.test(path);
+  const dirtyPaths = (await git(cwd, ['diff', '--name-only', '-z', 'HEAD', '--'])).split('\0');
+  if (dirtyPaths.some(assistantSettings)) {
+    throw new Error(
+      'Assistant settings changed; preserve them separately before delegated editing',
+    );
+  }
+  const index = new Map();
+  for (const record of (await git(cwd, ['ls-files', '--stage', '-z']))
+    .split('\0')
+    .filter(Boolean)) {
+    const boundary = record.indexOf('\t');
+    const [mode, oid, stage] = record.slice(0, boundary).split(' ');
+    if (stage !== '0') throw new Error('Resolve index conflicts before delegated editing');
+    index.set(record.slice(boundary + 1), { mode, oid });
+  }
   const result = [];
   let total = 0;
   fileLoop: for (const path of paths) {
     if (isAbsolute(path) || path.split('/').includes('..'))
       throw new Error('Unsafe repository path');
+    // Preserve unchanged checked-in assistant settings by object ID without
+    // reading their contents or including them in task context or patches.
+    if (assistantSettings(path)) {
+      if (index.has(path)) result.push({ path, ...index.get(path) });
+      continue;
+    }
     if (sensitivePath(path))
       throw new Error('Repository contains a sensitive path; exclude it before delegated editing');
     const parts = path.split('/');
@@ -106,6 +128,7 @@ export async function fingerprint(cwd) {
   for (const item of await entries(cwd)) {
     hash.update(item.path + '\0' + (item.mode || 'deleted') + '\0');
     if (item.data) hash.update(item.data);
+    if (item.oid) hash.update(item.oid);
     hash.update('\0');
   }
   return hash.digest('hex');
@@ -120,7 +143,9 @@ export async function captureTree(cwd) {
     for (const item of await entries(cwd)) {
       if (item.deleted) continue;
       else {
-        const oid = (await git(cwd, ['hash-object', '-w', '--stdin'], { input: item.data })).trim();
+        const oid =
+          item.oid ||
+          (await git(cwd, ['hash-object', '-w', '--stdin'], { input: item.data })).trim();
         info += `${item.mode} ${oid}\t${item.path}\0`;
       }
     }
