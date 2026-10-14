@@ -6,7 +6,7 @@ This project is not developed, endorsed, or maintained by Google, Anthropic, or 
 
 ## How it works
 
-Claude delegates a concrete task through a plugin skill. The Node runtime builds project context, starts Gemini CLI with Google OAuth and a tool policy, records structured progress, and returns the actual response. Gemini receives a separate session and can disagree with Claude's analysis.
+Claude delegates a concrete task through a plugin skill. The Node runtime builds project context, starts Gemini CLI with Google OAuth and a tool policy, records structured progress, and returns the actual response. Each job starts from a private control workspace with generated settings; the project is supplied as the task target. Gemini receives a separate session and can disagree with Claude's analysis.
 
 The six plugin agents are Claude-side coordinators: `gemini:reviewer`, `gemini:adversarial-reviewer`, `gemini:judge`, `gemini:advisor`, `gemini:investigator`, and `gemini:implementer`. They send substantive model work to Gemini CLI. A Claude agent's model field is not changed to Gemini.
 
@@ -24,7 +24,7 @@ The six plugin agents are Claude-side coordinators: `gemini:reviewer`, `gemini:a
 | Reviewed patch application   | Apply an eligible isolated patch after source-state and conflict checks.                               |
 | Optional completion gate     | Explicitly enable one bounded Gemini review when Claude stops; off by default.                         |
 
-Transfer sends supplied task context; it does not import a native Claude transcript, live tool state, or conversation permissions. Model access and quota come from your Google account. A paid Gemini subscription does not guarantee every model or unlimited CLI use. See Google's [authentication guide](https://geminicli.com/docs/get-started/authentication/) and [quota and pricing](https://geminicli.com/docs/resources/quota-and-pricing/).
+Transfer sends supplied task context; it does not import a native Claude transcript, live tool state, or conversation permissions. Continue a completed transfer through `/gemini:rescue --resume <job-id>` in advisory mode. Sessions created before version 0.1.1 lack the required private control directory and must be replaced by a fresh task. Model access and quota come from your Google account. A paid Gemini subscription does not guarantee every model or unlimited CLI use. See Google's [authentication guide](https://geminicli.com/docs/get-started/authentication/) and [quota and pricing](https://geminicli.com/docs/resources/quota-and-pricing/).
 
 ## Requirements
 
@@ -33,6 +33,7 @@ Transfer sends supplied task context; it does not import a native Claude transcr
 - Gemini CLI **0.63.0** on `PATH`. This version is deliberately pinned because tool policy and structured output are security-sensitive integration points. Other versions are rejected until their behavior is validated.
 - A Google account signed in through Gemini CLI. Use the Google account associated with your eligible subscription.
 - A POSIX platform for process-group cancellation. Windows is currently unsupported. Automated tests use local fixtures; see the live validation procedure below.
+- Editing requires macOS and the verified Gemini tool sandbox. Linux supports review/advice/investigation but refuses editing; it has no validated native-file-write boundary in this release.
 
 The plugin runtime has no npm dependencies. Gemini CLI has its own dependencies and system requirements. [Google's installation guide](https://geminicli.com/docs/get-started/installation/)
 
@@ -97,7 +98,7 @@ Add `--web` when the task requires Gemini's web search and page-fetch tools. The
 
 ### Review and apply an implementation
 
-`rescue --edit` gives Gemini file-reading and file-editing tools in an isolated linked worktree. The caller's working tree is preserved until patch application. A worktree separates changes; it is not an operating-system sandbox.
+`rescue --edit` gives Gemini file-reading and file-editing tools in a linked worktree, with mandatory macOS tool sandboxing. A worktree alone is not an operating-system sandbox. The runtime refuses unsupported platforms and incompatible inherited settings rather than running edits without the required boundary. Inherited extra workspace directories and custom sandbox permissions must not widen a delegated editing task.
 
 Retrieve the result, inspect its patch, and run the relevant checks through Claude Code. Then explicitly apply it:
 
@@ -114,7 +115,7 @@ Application refuses an ineligible task, changed source state, or patch conflict.
 
 Cleanup removes only a clean managed worktree with its original HEAD, and refuses dirty files, ignored files, or new commits. Applying a patch to the source does not clean the retained task worktree. Preserve or reconcile its changes before cleanup; keep any useful patch and evidence. Job records and patch files remain in the private state directory after cleanup.
 
-Shell execution is disabled by default. The experimental `--allow-shell --sandbox` path also requires `--edit`, macOS, and the upstream default tool sandbox policy. Linux shell delegation and Windows execution are unsupported. Treat any platform, custom-policy, or sandbox error as a refusal; never bypass it. Shell delegation and real account authentication need the live checks below before production use.
+Delegated shell execution is disabled in this release, including requests using `--allow-shell --sandbox`. Independent review reproduced writes outside the worktree through the upstream sandbox's system temporary-directory allowance. Gemini can implement the file change; run project commands and tests through Claude in the returned task worktree, inspect their results, then apply the patch explicitly. Ordinary file editing enables its required sandbox automatically. Linux editing and Windows execution are unsupported. Treat any platform, inherited-setting, custom-policy, or sandbox error as a refusal; never bypass it.
 
 ### Handoff and optional review gate
 
@@ -147,7 +148,7 @@ node plugins/gemini/scripts/companion.mjs --help
 }
 ```
 
-Supported request fields are `command`, `cwd`, `prompt`, `focus`, `base`, `model`, `background`, `resume`, `fresh`, `edit`, `allowShell`, `allowWeb`, `sandbox`, `timeoutMs`, `jobId`, `json`, `checkAuth`, and `enabled`. `resume` takes an explicit rescue job ID; it is mutually exclusive with `fresh`. `edit` is only valid for rescue. Lifecycle commands take a job ID. Gate takes `enabled:true` or `enabled:false`. Unknown fields are rejected.
+Supported request fields are `command`, `cwd`, `prompt`, `focus`, `base`, `model`, `background`, `resume`, `fresh`, `edit`, `allowShell`, `allowWeb`, `sandbox`, `timeoutMs`, `jobId`, `json`, `checkAuth`, and `enabled`. `resume` takes an explicit eligible rescue or transfer job ID; it is mutually exclusive with `fresh`. `edit` is only valid for rescue. `allowShell` remains recognized for diagnostics but requests to enable it are refused. Lifecycle commands take a job ID. Gate takes `enabled:true` or `enabled:false`. Unknown fields are rejected.
 
 Jobs and output are retained in a private project-scoped directory under `~/.local/state/gemini-plugin-cc` by default. `GEMINI_PLUGIN_STATE_DIR` changes that location. Do not place it in a shared directory or commit it. The plugin runs the executable named `gemini` from `PATH`; treat that executable and your Node/Git installation as trusted dependencies.
 
@@ -167,6 +168,16 @@ The tests exercise requests, runtime policy, stream parsing, lifecycle behavior,
 
 ### Live smoke test
 
+After Google sign-in, run the opt-in automated provider check from this repository:
+
+```sh
+npm run test:live -- --run
+```
+
+Without `--run`, it prints usage and makes no model requests. The live check uses a synthetic disposable Git repository and private task state, consumes account quota, and exercises authentication, review, a read-only write challenge, isolated implementation, continuation, and patch application. It retains evidence and distinguishes a model refusing a requested write from a tool actually denying one. A failure is not automatically retried. This complements the real-upstream confinement tests; it does not establish that every model response is correct.
+
+For manual validation, use the following checklist:
+
 Use a disposable Git repository containing no private data:
 
 1. Sign in interactively with `gemini`; confirm version `0.63.0`.
@@ -175,7 +186,7 @@ Use a disposable Git repository containing no private data:
 4. Ask a review task to write a sentinel file or run a shell command. Verify those operations are denied and the sentinel is absent.
 5. Run `/gemini:rescue --edit --background` with a small fix; verify only the isolated worktree changed. Retrieve the result, run relevant tests, and apply the patch.
 6. Start another task, cancel its explicit job ID, and confirm the job reaches a terminal state. Resume a completed rescue job and verify its Gemini session ID.
-7. Enable the gate explicitly, check one bounded review, then turn it off. If testing optional shell execution, use only a disposable repository and confirm the platform sandbox boundary.
+7. Enable the gate explicitly, check one bounded review, then turn it off. Verify delegated shell requests are refused; run necessary tests through Claude in the retained task worktree.
 
 Record platform, Node/Claude/Gemini versions, chosen model, outcomes, and any denied operation. Until these pass, describe provider integration as locally tested with fixtures and not validated against a live account.
 

@@ -20,4 +20,8 @@
 
 ## Boundaries
 
-Never install globally, alter existing Claude/Gemini settings, authenticate, publish or run paid/quotad model calls as part of build validation. No secrets are requested/read by this plugin. Repository content sent to Google remains subject to the CLI/account terms; pattern filtering cannot detect every secret. Generated job data stays private and is never committed.
+Automated build validation never installs globally, alters existing Claude/Gemini settings, authenticates, or runs provider model calls. User-authorized operational setup is separate: install the exact supported CLI and plugin, then let the user complete Google's sign-in flow. Live verification is explicit and uses synthetic code only. No secrets are requested/read by this plugin. Repository content sent to Google remains subject to the CLI/account terms; pattern filtering cannot detect every secret. Generated job data stays private and is never committed.
+
+## 0.1.1 repair acceptance
+
+The independent Astra review reproduced two isolation defects: native file tools could write global Gemini memory, and inherited includeDirectories survived an empty override and could expose the source checkout. The repair denies these writes before execution using actual upstream settings, argument parsing, policy and native-tool tests. Every edit requires the verified macOS tool sandbox and path policy; inherited directory and sandbox expansion fail closed. Delegated shell is refused because its upstream temporary-directory allowance widens writes. Linux editing remains unavailable until an equivalent boundary is verified. Astra repeated independent review after the repair; installation and live account validation are recorded separately in validation.md.

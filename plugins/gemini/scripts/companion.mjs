@@ -37,7 +37,7 @@ Commands:
 
 Run options: --cwd <path> --model <id> --web --background --wait --timeout-ms <1000..3600000>
 Rescue continuation: --resume <job-id> or --fresh (no implicit session reuse).
-Rescue shell: --edit --allow-shell --sandbox (supported macOS tool sandbox required).
+Edits: macOS native-tool sandbox required automatically; delegated shell is refused.
 Safe integration: --request <JSON-file> with command/cwd/options; never interpolate task text in shell.
 Output: --json or json:true in a JSON request. Model output is untrusted advisory evidence.
 `;
@@ -52,6 +52,13 @@ export async function readRequest(path) {
 }
 
 function presentJob(job) {
+  const canResume =
+    job.status === 'completed' &&
+    job.sessionId &&
+    job.executionDirectory &&
+    ['rescue', 'transfer'].includes(job.command) &&
+    !job.appliedAt &&
+    !job.cleanedAt;
   return {
     id: job.id,
     command: job.command,
@@ -64,15 +71,16 @@ function presentJob(job) {
     errorCode: job.errorCode,
     exitCode: job.exitCode,
     worktree: job.worktree,
+    executionDirectory: job.executionDirectory,
     patchPath: job.patchPath,
     patchBytes: job.patchBytes,
     changes: job.changes,
     appliedAt: job.appliedAt,
     cleanedAt: job.cleanedAt,
     cancellationRequested: job.cancellationRequested,
-    resumeDirectory: job.sessionId ? job.worktree || job.workspace : undefined,
-    resumeCommand: job.sessionId
-      ? `gemini --resume '${job.sessionId.replaceAll("'", "'\"'\"'")}'`
+    resumeDirectory: canResume ? job.workspace : undefined,
+    resumeCommand: canResume
+      ? `/gemini:rescue${job.request?.edit ? ' --edit' : ''} --resume ${job.id} <follow-up task>`
       : undefined,
   };
 }
@@ -163,7 +171,7 @@ export function render(value) {
       value.error && `Error: ${value.error}`,
       value.response && `\n${value.response}`,
       value.resumeCommand &&
-        `\nContinue directly from ${value.resumeDirectory}: ${value.resumeCommand}`,
+        `\nContinue through the plugin in ${value.resumeDirectory}: ${value.resumeCommand}`,
     ]
       .filter(Boolean)
       .join('\n');

@@ -59,10 +59,12 @@ export async function startJob(input, { store, runner = runGemini } = {}) {
     if (
       previous.status !== 'completed' ||
       !previous.sessionId ||
-      previous.command !== 'rescue' ||
+      !['rescue', 'transfer'].includes(previous.command) ||
       Boolean(previous.request.edit) !== request.edit
     )
-      throw new Error('Resume requires a completed rescue session in the same edit mode');
+      throw new Error(
+        'Resume requires a completed rescue or transfer session in the same edit mode',
+      );
     if (previous.appliedAt || previous.cleanedAt)
       throw new Error('Applied or cleaned jobs cannot be resumed; use a fresh task');
   }
@@ -184,6 +186,11 @@ export async function executeJob(store, id, { runner = runGemini, token } = {}) 
       startedAt: new Date().toISOString(),
       progress: 'collecting context',
     });
+    const executionDirectory =
+      previous?.executionDirectory || join(store.taskPath(id), 'execution');
+    if (previous && !previous.executionDirectory)
+      throw new Error('This older session has no retained execution directory; start a fresh task');
+    await store.update(id, { executionDirectory });
     const context = await collectContext({
       cwd,
       base: request.base,
@@ -202,6 +209,7 @@ export async function executeJob(store, id, { runner = runGemini, token } = {}) 
             ? 'review'
             : 'ask',
       resume: previous?.sessionId,
+      executionDirectory,
       timeoutMs: request.timeoutMs,
       signal: controller.signal,
       binary: process.env.GEMINI_PLUGIN_BINARY || 'gemini',

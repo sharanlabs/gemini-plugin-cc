@@ -31,12 +31,16 @@ try {
   console.log(
     `Checking upstream Gemini CLI ${SUPPORTED_GEMINI_VERSION}; npm integrity ${packed[0].integrity}`,
   );
-  execFileSync(process.execPath, ['--test', 'tests/runtime.test.mjs'], {
-    cwd: root,
-    env: { ...process.env, GEMINI_TEST_BUNDLE: bundle },
-    stdio: 'inherit',
-    timeout: 120000,
-  });
+  execFileSync(
+    process.execPath,
+    ['--test', 'tests/runtime.test.mjs', 'tests/confinement.test.mjs'],
+    {
+      cwd: root,
+      env: { ...process.env, GEMINI_TEST_BUNDLE: bundle },
+      stdio: 'inherit',
+      timeout: 120000,
+    },
+  );
 } finally {
   await rm(scratch, { recursive: true, force: true });
 }

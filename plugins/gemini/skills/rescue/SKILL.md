@@ -8,7 +8,7 @@ Use `command:"rescue"`, `cwd`, and a concrete `prompt`. Give Gemini the goal, ac
 
 For investigation omit `edit`. Set `edit:true` only when implementation has been authorized. Gemini edits a retained isolated linked Git worktree; it must not silently edit the caller's working tree. Without a Git repository or required isolation, report the runtime error. Never fall back to unrestricted execution in the source directory.
 
-Project commands and tests are denied by default. If the user authorized running them, `allowShell:true` requires `sandbox:true` and `edit:true`, with Gemini's sandbox prerequisites available. A sandbox can still allow network use; do not describe it as a full security boundary.
+Delegated project commands and shell execution are refused in this release, including `allowShell:true`. Run authorized tests through Claude's own tools in the returned task worktree and report their actual outcomes. Every Gemini editing task requires the verified macOS native-tool sandbox and path policy automatically. Do not bypass a runtime refusal or describe a worktree as a full security boundary.
 
 Require root-cause evidence, the smallest coherent patch, commands actually run, their outcomes, and residual risks. Return the worktree and patch information from the actual result. Applying it is a separate explicit `gemini:apply` action.
 

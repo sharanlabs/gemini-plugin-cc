@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { execFile } from 'node:child_process';
 import { promisify } from 'node:util';
-import { mkdtemp, writeFile, readFile } from 'node:fs/promises';
+import { mkdtemp, writeFile, readFile, realpath } from 'node:fs/promises';
 import { join } from 'node:path';
 import { tmpdir } from 'node:os';
 import { fileURLToPath } from 'node:url';
@@ -51,9 +51,17 @@ test('CLI request files keep shell text inert and return real structured result'
   assert.equal(result.status, 'completed');
   assert.equal(result.response, 'Verified answer.');
   assert.equal(result.runToken, undefined);
-  assert.equal(typeof result.resumeDirectory, 'string');
-  assert.match(result.resumeCommand, /^gemini --resume 'session-123'$/);
+  assert.equal(result.resumeCommand, undefined);
   await assert.rejects(readFile(marker));
+});
+
+test('eligible continuations use the guarded plugin rather than unrestricted Gemini', async () => {
+  const f = await fixture();
+  const result = await call(f, ['rescue', 'investigate the synthetic failure']);
+  assert.equal(result.status, 'completed');
+  assert.equal(result.resumeCommand, `/gemini:rescue --resume ${result.id} <follow-up task>`);
+  assert.equal(result.resumeDirectory, await realpath(f.root));
+  assert.ok(!result.resumeCommand.startsWith('gemini '));
 });
 
 test('detached job survives launcher and cancels its running Gemini process', async () => {

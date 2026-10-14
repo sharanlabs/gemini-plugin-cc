@@ -5,14 +5,14 @@
   },
   "metadata": {
     "description": "Unofficial Gemini CLI companion for Claude Code",
-    "version": "0.1.0"
+    "version": "0.1.1"
   },
   "plugins": [
     {
       "name": "gemini",
       "source": "./plugins/gemini",
       "description": "Unofficial independent Gemini specialists using Google sign-in through Gemini CLI",
-      "version": "0.1.0",
+      "version": "0.1.1",
       "author": {
         "name": "Gemini Companion contributors"
       },

@@ -113,11 +113,13 @@ test('resume requires prior completed session in same mode', async () => {
       store,
       runner: async (args) => {
         assert.equal(args.resume, 'session-123');
+        assert.equal(args.executionDirectory, prior.executionDirectory);
         return reply;
       },
     },
   );
   assert.equal(next.status, 'completed');
+  assert.equal(next.executionDirectory, prior.executionDirectory);
   await assert.rejects(
     startJob(
       { command: 'rescue', cwd: root, prompt: 'edit', edit: true, resume: prior.id },
@@ -125,6 +127,49 @@ test('resume requires prior completed session in same mode', async () => {
     ),
     /mode/,
   );
+});
+test('a transfer continues through the confined plugin rescue session', async () => {
+  const { root, state } = await fixture();
+  const store = new JobStore(root, state);
+  const prior = await startJob(
+    { command: 'transfer', cwd: root, prompt: 'Investigate this handoff' },
+    { store, runner: async () => reply },
+  );
+  assert.ok(prior.executionDirectory);
+  const continued = await startJob(
+    { command: 'rescue', cwd: root, prompt: 'Continue investigation', resume: prior.id },
+    {
+      store,
+      runner: async (options) => {
+        assert.equal(options.resume, prior.sessionId);
+        assert.equal(options.executionDirectory, prior.executionDirectory);
+        return reply;
+      },
+    },
+  );
+  assert.equal(continued.status, 'completed');
+});
+test('a legacy session without a retained execution directory refuses continuation', async () => {
+  const { root, state } = await fixture();
+  const store = new JobStore(root, state);
+  const prior = await store.create({
+    command: 'rescue',
+    request: { edit: false },
+    status: 'completed',
+    sessionId: 'legacy',
+  });
+  await store.update(prior.id, { status: 'completed' });
+  const continued = await startJob(
+    { command: 'rescue', cwd: root, prompt: 'Continue investigation', resume: prior.id },
+    {
+      store,
+      runner: async () => {
+        throw new Error('Legacy session must never run');
+      },
+    },
+  );
+  assert.equal(continued.status, 'failed');
+  assert.match(continued.error, /older session/);
 });
 test('specialists require evidence and distinguish uncertainty', () => {
   const prompt = buildPrompt({ command: 'adversarial-review', focus: 'auth' }, 'diff context');

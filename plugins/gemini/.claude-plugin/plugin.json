@@ -1,6 +1,6 @@
 {
   "name": "gemini",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Unofficial Gemini CLI companion: independent review, adversarial analysis, judgment, advice, investigation, and isolated implementation using Google sign-in.",
   "author": {
     "name": "Gemini Companion contributors"

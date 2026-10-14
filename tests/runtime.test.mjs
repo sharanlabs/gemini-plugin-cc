@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { mkdtemp, rm, chmod, access } from 'node:fs/promises';
+import { mkdtemp, rm, chmod, access, realpath } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -39,6 +39,7 @@ test('keeps user input off argv and forces Google login plus tool restrictions',
         GOOGLE_API_KEY: 'TOP_SECRET_VALUE',
         GOOGLE_GENAI_USE_VERTEXAI: 'true',
         GEMINI_CLI_HOME: '/wrong',
+        GEMINI_RESTRICTED_MODE: 'true',
       },
     }),
   );
@@ -50,8 +51,11 @@ test('keeps user input off argv and forces Google login plus tool restrictions',
   assert.equal(details.settings.security.auth.selectedType, 'oauth-personal');
   assert.equal(details.settings.security.auth.enforcedType, 'oauth-personal');
   assert.equal(details.settings.hooksConfig.enabled, false);
-  assert.equal(details.settings.admin.mcp.enabled, false);
-  assert.equal(details.settings.admin.extensions.enabled, false);
+  assert.equal(details.settings.skills.enabled, false);
+  assert.ok(details.args.includes('--skip-trust'));
+  assert.ok(details.args.includes('--allowed-mcp-server-names'));
+  assert.notEqual(details.cwd, cwd);
+  assert.deepEqual(details.settings.context.includeDirectories, [await realpath(cwd)]);
   assert.equal(details.settings.tools.core.includes('run_shell_command'), false);
   assert.equal(details.settings.tools.core.includes('write_file'), false);
   assert.equal(details.settings.context.fileFiltering.respectGeminiIgnore, true);
@@ -271,7 +275,6 @@ test(
       opts({
         cwd: worktree,
         mode: 'edit',
-        allowShell: true,
         sandbox: true,
         env: { ...process.env, FAKE_CASE: 'inspect', SECRET_TOKEN: 'private' },
       }),
@@ -279,7 +282,18 @@ test(
     const details = JSON.parse(result.response);
     assert.equal(details.settings.security.toolSandboxing, true);
     assert.equal(details.settings.advanced.ignoreLocalEnv, true);
-    assert.equal(details.settings.tools.core.includes('run_shell_command'), true);
+    assert.equal(details.settings.tools.core.includes('run_shell_command'), false);
     assert.equal(details.settings.tools.sandbox, false);
   },
 );
+
+test('shell delegation fails closed even with sandbox opt-in', async () => {
+  await assert.rejects(runGemini(opts({ mode: 'edit', allowShell: true, sandbox: true })), {
+    code: 'SHELL_UNSUPPORTED',
+  });
+});
+test('direct resume requires retained execution directory', async () => {
+  await assert.rejects(runGemini(opts({ resume: 'session-123' })), {
+    code: 'RESUME_DIRECTORY_REQUIRED',
+  });
+});

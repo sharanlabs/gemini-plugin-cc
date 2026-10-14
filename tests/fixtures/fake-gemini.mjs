@@ -8,7 +8,7 @@ if (args.includes('--version')) {
 }
 if (args.includes('--help')) {
   console.log(
-    '--prompt --output-format stream-json --model --resume --admin-policy --approval-mode --extensions --sandbox',
+    '--prompt --output-format stream-json --model --resume --admin-policy --approval-mode --extensions --sandbox --skip-trust --allowed-mcp-server-names',
   );
   process.exit(0);
 }
@@ -48,10 +48,11 @@ else {
       behavior === 'inspect'
         ? JSON.stringify({
             args,
+            cwd: process.cwd(),
             input,
-            settings: JSON.parse(readFileSync(process.env.GEMINI_CLI_SYSTEM_SETTINGS_PATH, 'utf8')),
+            settings: JSON.parse(readFileSync(`${process.cwd()}/.gemini/settings.json`, 'utf8')),
             authEnv: Object.keys(process.env).filter((k) =>
-              /API_KEY|USE_VERTEXAI|GEMINI_CLI_HOME/.test(k),
+              /API_KEY|USE_VERTEXAI|GEMINI_CLI_HOME|GEMINI_RESTRICTED_MODE/.test(k),
             ),
           })
         : 'Verified answer.',

@@ -1,5 +1,31 @@
 # Validation record
 
+## 0.1.1 repair — 2026-10-14
+
+Environment: macOS, Node 24.21.0, npm 11.19.0, Claude Code 2.1.300, installed official Gemini CLI 0.63.0. Google credential contents were never inspected or copied.
+
+- Offline suite: **85 passed, 0 failed, 3 upstream-only checks skipped**.
+- Real upstream verification: **27 passed, 0 failed, 0 skipped**. The combined suite with the pinned installed bundle runs all **88 tests**.
+- JavaScript syntax/JSON and Git whitespace checks passed. All four Claude marketplace/plugin/skills/agents validators passed.
+- Actual installed CLI setup reports version 0.63.0 and every required capability; authentication remains separately unchecked.
+- Real upstream regression captures generated runtime arguments and feeds them into the actual strict CLI parser, then passes the parsed arguments into the actual settings/configuration startup. This caught and removed an unsupported `--ignore-env` flag.
+- Effective settings enforce Google OAuth and native tool sandboxing, disable hooks/skills/Gemma/IDE, and include only the task target. An empty private control dotenv file prevents loading synthetic inherited environment content. Restrictive inherited trust selectors are stripped before startup.
+- Actual extension discovery verifies the synthetic installed extension remains inactive under `--extensions none`. Actual MCP initialization verifies the inherited synthetic server does not start. The initialized registry contains exactly the six permitted reading/editing tools.
+- Actual native write/replacement tests deny original source, global Gemini memory, control settings, traversal and symlink escapes, while allowing task-file creation and replacement. Source/global sentinels remain unchanged.
+- Shell delegation is refused even with explicit sandbox opt-in because independent review reproduced the upstream system temporary-directory allowance. Linux editing and Windows execution remain unsupported.
+- Astra independently reran **36 targeted tests with no skips**, including actual upstream components, and returned PASS for offline startup and macOS confinement. Live provider readiness remains unverified.
+- The opt-in live smoke runner has **8 helper/safety tests**. Its default invocation prints help without model requests. The live run is pending Google sign-in.
+
+### Remaining live checks
+
+No Google OAuth cache exists on this machine at the latest existence-only check. The user must complete `gemini` → **Sign in with Google**, then run `/gemini:setup --check-auth` and `npm run test:live -- --run`. Account entitlement, real provider responses and continuation are not established by component tests.
+
+An actual Claude command-routing test was attempted in a synthetic directory with restricted tools and no Google request. Claude returned its session-limit error before running the setup skill. Manifest validation and installation do not substitute for that live coordination check; retry `/gemini:setup` in a new Claude session after its quota resets.
+
+The initial 0.1.0 fixture checks missed real settings precedence and native-write boundaries. They are preserved below as historical results, not release-readiness evidence. Use version 0.1.1 or later.
+
+## Historical 0.1.0 build record
+
 Date: 2026-10-13.
 
 Local environment: macOS, Node 24.21.0, npm 11.19.0, Claude Code 2.1.296. The official Gemini CLI 0.63.0 npm package was downloaded into temporary evidence storage; no global Gemini installation or credential contents were used.
