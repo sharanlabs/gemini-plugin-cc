@@ -216,8 +216,10 @@ test('rejects unsupported versions before inference', async () => {
     code: 'UNSUPPORTED_VERSION',
   });
 });
-test('rejects edit in ordinary directory', async () => {
-  await assert.rejects(runGemini(opts({ mode: 'edit' })), { code: 'WORKTREE_REQUIRED' });
+test('editing refuses ordinary folders and unverified platforms', async () => {
+  await assert.rejects(runGemini(opts({ mode: 'edit' })), {
+    code: process.platform === 'darwin' ? 'WORKTREE_REQUIRED' : 'UNSUPPORTED_SANDBOX',
+  });
 });
 test('rejects invalid inputs before spawning', async () => {
   await assert.rejects(runGemini(opts({ mode: 'yolo' })), { code: 'INVALID_INPUT' });
