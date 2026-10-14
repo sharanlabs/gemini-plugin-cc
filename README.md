@@ -54,7 +54,7 @@ From this repository's root, load the plugin for a development session:
 claude --plugin-dir ./plugins/gemini
 ```
 
-For a persistent installation, register the GitHub repository as a marketplace and install the plugin (the repository is private, so GitHub access is required):
+For a persistent installation, register the public GitHub repository as a marketplace and install the plugin:
 
 ```sh
 claude plugin marketplace add sharanlabs/gemini-plugin-cc
@@ -196,4 +196,4 @@ Project context sent to Gemini is processed by Google under the account's applic
 
 The plugin format follows Anthropic's [plugin reference](https://code.claude.com/docs/en/plugins-reference), [skill documentation](https://code.claude.com/docs/en/skills), and [subagent documentation](https://code.claude.com/docs/en/sub-agents). Compatibility changes should include evidence from the target CLI, negative policy tests, and a live smoke test; do not relax the version check to make an unverified release appear supported.
 
-Licensed under [Apache-2.0](LICENSE). Google, Gemini, Claude, and Codex are trademarks of their respective owners.
+This project is open source under [Apache-2.0](LICENSE). You can use, modify, and redistribute it under that license's terms. See [NOTICE](NOTICE) for project attribution. Gemini CLI, Claude Code, and account subscriptions are separate products with their own terms. Google, Gemini, Claude, and Codex are trademarks of their respective owners.
