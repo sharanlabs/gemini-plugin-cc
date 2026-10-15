@@ -12,6 +12,10 @@ import { statusJobs } from '../plugins/gemini/scripts/lib/jobs.mjs';
 const exec = promisify(execFile);
 const cli = fileURLToPath(new URL('../plugins/gemini/scripts/companion.mjs', import.meta.url));
 const fake = fileURLToPath(new URL('./fixtures/fake-gemini.mjs', import.meta.url));
+// Windows integration includes multiple native PowerShell DACL checks. Cold
+// startup under the parallel suite can exceed 10 seconds; each operation keeps
+// its runtime deadline, while the outer harness allows the full request to finish.
+const integrationTimeoutMs = process.platform === 'win32' ? 60000 : 10000;
 async function fixture() {
   const root = await mkdtemp(join(tmpdir(), 'gemini-cli-root-'));
   const state = await mkdtemp(join(tmpdir(), 'gemini-cli-state-'));
@@ -24,7 +28,7 @@ async function fixture() {
 async function call(f, args) {
   const { stdout } = await exec(process.execPath, [cli, ...args, '--cwd', f.root, '--json'], {
     env: f.env,
-    timeout: 10000,
+    timeout: integrationTimeoutMs,
   });
   return JSON.parse(stdout);
 }
@@ -45,7 +49,7 @@ test('CLI request files keep shell text inert and return real structured result'
   );
   const { stdout } = await exec(process.execPath, [cli, '--request', request], {
     env: f.env,
-    timeout: 10000,
+    timeout: integrationTimeoutMs,
   });
   const result = JSON.parse(stdout);
   assert.equal(result.status, 'completed');

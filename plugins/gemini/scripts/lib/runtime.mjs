@@ -36,6 +36,9 @@ function childEnvironment(env) {
       delete clean[key];
   }
   clean.NO_UPDATE_NOTIFIER = '1';
+  // Delegated requests must use cached login. Otherwise upstream writes OAuth
+  // consent to stdout and can interpret task stdin as the consent answer.
+  clean.NO_BROWSER = 'true';
   return clean;
 }
 
@@ -140,6 +143,12 @@ function execute(
         }
       }
       if (code !== 0 || killedBy) {
+        if (code === 41 && !killedBy) {
+          const error = failure('AUTH_REQUIRED', 'Gemini Google sign-in is required. Open Sign in to Gemini, finish browser sign-in, wait for the Gemini chat prompt, then enter /quit and retry.');
+          error.exitCode = code;
+          reject(error);
+          return;
+        }
         const error = failure(
           'GEMINI_FAILED',
           `Gemini CLI failed${Number.isInteger(code) ? ` (exit ${code})` : ''}. Check Google sign-in, model access, and quota in Gemini CLI.`,

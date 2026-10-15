@@ -334,7 +334,8 @@ test(
       const inspected = await runGemini({ cwd: target, executionDirectory: control,
         prompt: 'Fixture only.', mode: 'edit-proposal', binary: fake,
         env: { ...process.env, HOME: home, USERPROFILE: home, FAKE_CASE: 'inspect' } });
-      const generatedArguments = JSON.parse(inspected.response).args;
+      const inspectedLaunch = JSON.parse(inspected.response);
+      const generatedArguments = inspectedLaunch.args;
       const bundleDir = dirname(process.env.GEMINI_TEST_BUNDLE);
       const names = await readdir(bundleDir);
       const settingsBundle = names.find((name) => name === 'chunk-HFRGWL72.js');
@@ -373,6 +374,7 @@ test(
         assert.deepEqual(argv.extensions, ['none']);
         const config = await loadCliConfig(settings.merged, 'fixture-readonly-session', argv,
           { cwd: control, loadedSettings: settings, worktreeSettings: {} });
+        assert.equal(config.isBrowserLaunchSuppressed(), true);
         const extension = config.getExtensionLoader().getExtensions().find((item) => item.name === 'fixture-extension');
         assert.ok(extension, 'synthetic extension discovered');
         assert.equal(extension.isActive, false);
@@ -401,7 +403,7 @@ test(
       await writeFile(scriptPath, script);
       try {
         execFileSync(process.execPath, [scriptPath], { cwd: control,
-          env: { ...process.env, HOME: home, USERPROFILE: home, GEMINI_CLI_TRUST_WORKSPACE: 'true' },
+          env: { ...process.env, HOME: home, USERPROFILE: home, GEMINI_CLI_TRUST_WORKSPACE: 'true', NO_BROWSER: inspectedLaunch.noBrowser },
           timeout: 60000, stdio: ['ignore', 'pipe', 'pipe'] });
       } catch (error) { throw new Error(String(error.stdout) + String(error.stderr)); }
     } finally { await rm(scratch, { recursive: true, force: true }); }

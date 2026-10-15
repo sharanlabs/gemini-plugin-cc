@@ -34,6 +34,9 @@ else if (behavior === 'malformed') console.log('not json');
 else if (behavior === 'fail') {
   console.error('credential: TOP_SECRET_VALUE');
   process.exit(1);
+} else if (behavior === 'auth-required') {
+  console.error('Manual authorization is required. TOP_SECRET_VALUE');
+  process.exit(41);
 } else if (behavior === 'empty') process.exit(0);
 else {
   emit({ type: 'init', session_id: 'session-123', model: 'test-model' });
@@ -50,6 +53,7 @@ else {
             args,
             cwd: process.cwd(),
             input,
+            noBrowser: process.env.NO_BROWSER,
             settings: JSON.parse(readFileSync(`${process.cwd()}/.gemini/settings.json`, 'utf8')),
             authEnv: Object.keys(process.env).filter((k) =>
               /API_KEY|USE_VERTEXAI|GEMINI_CLI_HOME|GEMINI_RESTRICTED_MODE/.test(k),

@@ -40,6 +40,7 @@ test('keeps user input off argv and forces Google login plus tool restrictions',
         GOOGLE_GENAI_USE_VERTEXAI: 'true',
         GEMINI_CLI_HOME: '/wrong',
         GEMINI_RESTRICTED_MODE: 'true',
+        NO_BROWSER: 'false',
       },
     }),
   );
@@ -48,6 +49,7 @@ test('keeps user input off argv and forces Google login plus tool restrictions',
   assert.ok(details.input.includes(prompt));
   assert.ok(!details.input.startsWith('/danger'));
   assert.deepEqual(details.authEnv, []);
+  assert.equal(details.noBrowser, 'true');
   assert.equal(details.settings.security.auth.selectedType, 'oauth-personal');
   assert.equal(details.settings.security.auth.enforcedType, 'oauth-personal');
   assert.equal(details.settings.hooksConfig.enabled, false);
@@ -66,7 +68,8 @@ test(
   'upstream 0.63.0 policy engine enforces tool and expansion restrictions',
   { skip: !process.env.GEMINI_TEST_BUNDLE },
   async () => {
-    const { loadPoliciesFromToml, PolicyEngine } = await import(pathToFileURL(process.env.GEMINI_TEST_BUNDLE).href);
+    const { loadPoliciesFromToml, PolicyEngine, FatalAuthenticationError } = await import(pathToFileURL(process.env.GEMINI_TEST_BUNDLE).href);
+    assert.equal(new FatalAuthenticationError('Synthetic authentication required').exitCode, 41);
     for (const [policy, expected] of [
       ['readonly.toml', ['allow', 'deny', 'deny', 'deny', 'deny']],
       ['edit.toml', ['allow', 'allow', 'deny', 'deny', 'deny']],
@@ -152,6 +155,7 @@ test(
   },
 );
 for (const [behavior, code] of [
+  ['auth-required', 'AUTH_REQUIRED'],
   ['malformed', 'INVALID_STREAM'],
   ['empty', 'INVALID_STREAM'],
   ['no-result', 'INVALID_STREAM'],
