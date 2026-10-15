@@ -41,10 +41,26 @@ Install the supported Gemini CLI version if needed:
 
 ```sh
 npm install --global @google/gemini-cli@0.63.0
+```
+
+Open the installed **Sign in to Gemini** shortcut, follow the Google link shown in its terminal, and paste the returned authorization code into that terminal only. After the Gemini chat prompt appears, enter `/quit`. The shortcut uses the official CLI's link-and-code flow because its pinned version can attempt browser consent before its UI is ready. The plugin reuses Gemini CLI's cached OAuth authentication. It does not copy, print, or manage your credentials. API-key and Vertex authentication are outside this plugin's supported workflow.
+
+For a manual CLI installation without the shortcut, start sign-in in an interactive terminal:
+
+macOS:
+
+```sh
+NO_BROWSER=true gemini
+```
+
+Windows PowerShell:
+
+```powershell
+$env:NO_BROWSER = 'true'
 gemini
 ```
 
-Choose **Sign in with Google** in Gemini CLI and complete the browser flow. The plugin reuses Gemini CLI's cached OAuth authentication. It does not copy, print, or manage your credentials. API-key and Vertex authentication are outside this plugin's supported workflow.
+Follow the Google link and enter the returned code into that same terminal. The authorization code must never be pasted into Claude or chat.
 
 From this repository's root, load the plugin for a development session:
 

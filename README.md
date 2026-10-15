@@ -1,12 +1,12 @@
 # Gemini Companion for Claude Code
 
-Use Gemini as an independent reviewer, judge, advisor, investigator, or implementation partner inside Claude Code. Sign in with your Google account—no API key required.
+Use Gemini as an independent reviewer, judge, advisor, investigator, or implementation partner inside Claude Code. Use **Sign in with Google**—no API key required.
 
 ## Install
 
-1. Download and extract the [macOS installer](https://github.com/sharanlabs/gemini-plugin-cc/releases/download/v0.2.1/gemini-companion-macos-v0.2.1.zip) or [Windows installer](https://github.com/sharanlabs/gemini-plugin-cc/releases/download/v0.2.1/gemini-companion-windows-v0.2.1.zip).
+1. Download and extract the [macOS installer](https://github.com/sharanlabs/gemini-plugin-cc/releases/download/v0.2.2/gemini-companion-macos-v0.2.2.zip) or [Windows installer](https://github.com/sharanlabs/gemini-plugin-cc/releases/download/v0.2.2/gemini-companion-windows-v0.2.2.zip).
 2. Open **Install.command** on Mac or **Install.cmd** on Windows. Setup installs the supported Gemini CLI privately. If Git or Claude Code is missing, follow the official setup it opens, then run the installer again.
-3. Open **Sign in to Gemini**, choose **Sign in with Google**, and finish in your browser. Wait for the Gemini chat prompt, then exit with `/quit`, then open **Launch Claude** in the installed folder.
+3. Open **Sign in to Gemini**. Open the Google link shown in Terminal, sign in, and paste the returned authorization code into that Terminal only. When the Gemini chat prompt appears, enter `/quit`, then open **Launch Claude** in the installed folder.
 
 In Claude Code, run:
 

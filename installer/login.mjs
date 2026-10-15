@@ -14,6 +14,9 @@ export function googleLoginEnvironment(env) {
   }
   clean.GEMINI_CLI_TRUST_WORKSPACE = 'true';
   clean.NO_UPDATE_NOTIFIER = '1';
+  // Pinned CLI startup authenticates before its browser-consent UI is mounted
+  // and caches that failure. Its supported Google link/code flow avoids the race.
+  clean.NO_BROWSER = 'true';
   return clean;
 }
 export async function prepareGoogleLogin({ receipt, env = process.env }) {
@@ -23,7 +26,7 @@ export async function prepareGoogleLogin({ receipt, env = process.env }) {
     security: { auth: { selectedType: 'oauth-personal', enforcedType: 'oauth-personal', useExternal: false }, disableYoloMode: true },
     hooksConfig: { enabled: false }, skills: { enabled: false }, mcp: { allowed: [] },
     tools: { core: [], discoveryCommand: null, callCommand: null, sandbox: false },
-    general: { enableAutoUpdate: false, plan: { enabled: false } },
+    general: { enableAutoUpdate: false, enableAutoUpdateNotification: false, plan: { enabled: false } },
     experimental: { enableAgents: false, gemmaModelRouter: { enabled: false } },
     ide: { enabled: false }, advanced: { ignoreLocalEnv: true }, telemetry: { enabled: false },
     context: { includeDirectories: [], fileName: `gemini-plugin-login-disabled-${randomUUID()}.md`, includeDirectoryTree: false, loadMemoryFromIncludeDirectories: false },

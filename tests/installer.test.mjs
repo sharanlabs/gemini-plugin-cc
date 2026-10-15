@@ -212,7 +212,7 @@ test('Claude version floor accepts future minor and major versions', async t => 
 test('explicit installer login strips alternate auth selectors and uses a private Google-only workspace', async t => {
   const f = await fixture(t);
   let capture;
-  const env = { ...process.env, GEMINI_API_KEY: 'synthetic-key', GOOGLE_GENAI_USE_VERTEXAI: 'true', GEMINI_CLI_HOME: '/synthetic-home', NODE_OPTIONS: '--inspect', GEMINI_CLI_SYSTEM_SETTINGS_PATH: '/synthetic-settings' };
+  const env = { ...process.env, GEMINI_API_KEY: 'synthetic-key', GOOGLE_GENAI_USE_VERTEXAI: 'true', GEMINI_CLI_HOME: '/synthetic-home', NODE_OPTIONS: '--inspect', GEMINI_CLI_SYSTEM_SETTINGS_PATH: '/synthetic-settings', NO_BROWSER: 'false' };
   await f.module.install({ ...f, signIn: true, env, execute: async (...args) => {
     if (args[2]?.interactive) { capture = args; return ''; }
     return f.execute(...args);
@@ -220,6 +220,7 @@ test('explicit installer login strips alternate auth selectors and uses a privat
   for (const key of ['GEMINI_API_KEY', 'GOOGLE_GENAI_USE_VERTEXAI', 'GEMINI_CLI_HOME', 'NODE_OPTIONS', 'GEMINI_CLI_SYSTEM_SETTINGS_PATH']) assert.equal(capture[2].env[key], undefined);
   assert.equal(capture[2].env.HOME, process.env.HOME);
   assert.equal(capture[2].env.USERPROFILE, process.env.USERPROFILE);
+  assert.equal(capture[2].env.NO_BROWSER, 'true');
   assert.equal(capture[2].cwd, join(f.base, 'login'));
   assert.ok(capture[1].includes('--extensions'));
   assert.ok(capture[1].includes('none'));
@@ -228,6 +229,7 @@ test('explicit installer login strips alternate auth selectors and uses a privat
   assert.equal(settings.security.auth.enforcedType, 'oauth-personal');
   assert.equal(settings.hooksConfig.enabled, false);
   assert.equal(settings.skills.enabled, false);
+  assert.equal(settings.general.enableAutoUpdateNotification, false);
   assert.deepEqual(settings.tools.core, []);
   assert.equal(await readFile(join(capture[2].cwd, '.gemini', '.env'), 'utf8'), '');
 });
@@ -240,12 +242,13 @@ test('installed sign-in shortcut uses the same sanitized Google login boundary',
   await f.module.install(f);
   const receipt = JSON.parse(await readFile(join(f.base, 'install.json'), 'utf8'));
   const capture = join(f.base, 'synthetic-login-capture.json');
-  await writeFile(receipt.geminiEntry, `const fs=require('node:fs');fs.writeFileSync(${JSON.stringify(capture)},JSON.stringify({cwd:process.cwd(),env:Object.fromEntries(['GEMINI_API_KEY','GOOGLE_GENAI_USE_VERTEXAI','GEMINI_CLI_HOME','NODE_OPTIONS','HOME','USERPROFILE'].map(k=>[k,process.env[k]]))}));`);
-  execFileSync(process.execPath, [join(f.base, 'launch.mjs'), '--sign-in'], { env: { ...process.env, GEMINI_API_KEY: 'synthetic-key', GOOGLE_GENAI_USE_VERTEXAI: 'true', GEMINI_CLI_HOME: '/synthetic-home', NODE_OPTIONS: '--no-warnings' } });
+  await writeFile(receipt.geminiEntry, `const fs=require('node:fs');fs.writeFileSync(${JSON.stringify(capture)},JSON.stringify({cwd:process.cwd(),env:Object.fromEntries(['GEMINI_API_KEY','GOOGLE_GENAI_USE_VERTEXAI','GEMINI_CLI_HOME','NODE_OPTIONS','HOME','USERPROFILE','NO_BROWSER'].map(k=>[k,process.env[k]]))}));`);
+  execFileSync(process.execPath, [join(f.base, 'launch.mjs'), '--sign-in'], { env: { ...process.env, GEMINI_API_KEY: 'synthetic-key', GOOGLE_GENAI_USE_VERTEXAI: 'true', GEMINI_CLI_HOME: '/synthetic-home', NODE_OPTIONS: '--no-warnings', NO_BROWSER: 'false' } });
   const details = JSON.parse(await readFile(capture, 'utf8'));
   for (const key of ['GEMINI_API_KEY', 'GOOGLE_GENAI_USE_VERTEXAI', 'GEMINI_CLI_HOME', 'NODE_OPTIONS']) assert.equal(details.env[key], undefined);
   assert.equal(details.env.HOME, process.env.HOME);
   assert.equal(details.env.USERPROFILE, process.env.USERPROFILE);
+  assert.equal(details.env.NO_BROWSER, 'true');
   assert.equal(await realpath(details.cwd), await realpath(join(f.base, 'login')));
   assert.equal(JSON.parse(await readFile(join(details.cwd, '.gemini', 'settings.json'), 'utf8')).security.auth.enforcedType, 'oauth-personal');
 });
