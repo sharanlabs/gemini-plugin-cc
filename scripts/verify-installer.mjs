@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import { access, mkdtemp, mkdir, readFile, rm } from 'node:fs/promises';
+import { access, mkdtemp, mkdir, readFile, realpath, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { dirname, delimiter, join, resolve } from 'node:path';
 import { execFileSync } from 'node:child_process';
@@ -9,7 +9,7 @@ import { buildArtifacts } from './pack.mjs';
 
 // Deliberately separate from npm test: this downloads pinned public dependencies,
 // uses real Claude plugin management in an isolated config, and never signs in.
-const scratch = await mkdtemp(join(tmpdir(), 'gemini-installer-verification-'));
+const scratch = await realpath(await mkdtemp(join(tmpdir(), 'gemini-installer-verification-')));
 try {
   const artifacts = await buildArtifacts({ output: join(scratch, 'artifacts') });
   const sums = await readFile(join(scratch, 'artifacts', 'SHA256SUMS.txt'), 'utf8');
