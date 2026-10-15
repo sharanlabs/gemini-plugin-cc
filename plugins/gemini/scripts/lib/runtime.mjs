@@ -144,7 +144,7 @@ function execute(
       }
       if (code !== 0 || killedBy) {
         if (code === 41 && !killedBy) {
-          const error = failure('AUTH_REQUIRED', 'Gemini Google sign-in is required. Open Sign in to Gemini, finish browser sign-in, wait for the Gemini chat prompt, then enter /quit and retry.');
+          const error = failure('AUTH_REQUIRED', 'Gemini Google sign-in is required. Open Sign in to Gemini, follow the Google link, and paste its authorization code into that Terminal only. Wait for the Gemini chat prompt, then enter /quit and retry.');
           error.exitCode = code;
           reject(error);
           return;

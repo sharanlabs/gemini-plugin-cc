@@ -1,5 +1,13 @@
 # Validation record
 
+## 0.2.2 — 2026-10-15
+
+A user screenshot identified the exact interactive failure: `Authentication consent could not be obtained`. Public pinned CLI source and a credential-free reproduction confirmed that initial authentication runs before the UI registers its consent listener; a rejected authentication promise is then reused by menu retries. The sign-in launcher now sets the supported `NO_BROWSER=true` option to use Google's link-and-code flow, retaining normal Google account authentication and CLI-managed credential storage. No credential contents were inspected or copied.
+
+Regression tests check both direct installer sign-in and the actual installed launcher child environment, including an inherited `NO_BROWSER=false`. Account authorization and authenticated workflows require the user to finish the Google link-and-code flow; successful fixture tests do not establish that live outcome.
+
+Local macOS results: **131 passed, 0 failed, 6 expected platform/upstream skips**; pinned-upstream verification: **30 passed, 0 failed, 0 skipped**. Syntax/JSON, whitespace and all four Claude validators pass. The private login settings also disable global CLI update notices so they do not recommend changing the tested runtime through a separate global install.
+
 ## 0.2.1 — 2026-10-15
 
 A real authenticated setup attempt exposed an upstream OAuth consent prompt on structured stdout when reusable Google authentication was unavailable. Delegated subprocesses now force browser suppression, and the pinned CLI authentication exit code is reported as `AUTH_REQUIRED` with interactive sign-in guidance. No credential contents were inspected. This fixes startup failure handling; it does not establish account entitlement or successful model use.

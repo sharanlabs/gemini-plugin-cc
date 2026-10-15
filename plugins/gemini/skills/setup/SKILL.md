@@ -9,7 +9,7 @@ Run the prerequisite check with `{"command":"setup","cwd":"<absolute-project-dir
 
 The default check must not send project content to Google and must not claim authentication succeeded. If the user explicitly supplied `--check-auth`, add `"checkAuth":true`; this makes a small authenticated provider request.
 
-Explain each failed prerequisite from the runtime result. For missing sign-in, ask the user to open **Sign in to Gemini** in the installed folder (or run `gemini` for a manual installation), choose **Sign in with Google**, and use the account associated with their subscription. Never read, print, import, or create credential files or API keys. Do not install software or change authentication settings automatically. Installation commands are in the repository README.
+Explain each failed prerequisite from the runtime result. For missing sign-in, ask the user to open **Sign in to Gemini** in the installed folder, open the Google link it displays, and paste the returned authorization code into that terminal only. Use the account associated with their subscription. The user must never paste that code into Claude or chat. For manual CLI installations, have the user start `gemini` in an interactive terminal with the environment variable `NO_BROWSER=true`, using the syntax for their operating system and shell, then follow its Google link and code prompt. Never read, print, import, or create credential files or API keys. Do not install software or change authentication settings automatically. Installation commands are in the repository README.
 
 Model access and quota follow the signed-in Google account.
 

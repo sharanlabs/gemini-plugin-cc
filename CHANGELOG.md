@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.2.2 — 2026-10-15
+
+- Fix initial Google sign-in by using the official CLI link-and-code authentication flow. The pinned CLI can otherwise attempt authentication before its browser-consent interface is mounted and retain that failure.
+- Update installation and recovery guidance to show where to open the Google link and enter the code. Authentication codes stay in the Gemini terminal.
+- Hide global CLI update prompts inside the pinned private sign-in runtime.
+
 ## 0.2.1 — 2026-10-15
 
 - Prevent delegated requests from opening browser consent or treating task input as a sign-in answer when cached Google authentication is unavailable.

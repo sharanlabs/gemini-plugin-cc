@@ -161,7 +161,7 @@ export async function install({ source = resolve(dirname(fileURLToPath(import.me
     completed = true;
     log(`Installed Gemini Companion ${manifest.version}. Launch shortcuts: ${base}`);
     if (signIn) {
-      log('Choose Sign in with Google. Complete the browser flow, then type /quit to return. Authentication stays with Gemini CLI.');
+      log('Open the Google link shown in Terminal, sign in, and paste its authorization code into that Terminal only. When the Gemini chat prompt appears, type /quit. Authentication stays with Gemini CLI.');
       await googleSignIn({ receipt, env: childEnv, execute });
     }
     return { ...plan, status: 'installed', receipt: receiptPath };
