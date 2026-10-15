@@ -64,8 +64,10 @@ function execute(
     const stop = (error) => {
       if (terminalError) return;
       terminalError = error;
-      killPending = kill('SIGTERM').catch(() => {
-        terminalError = failure('PROCESS_TERMINATION_FAILED', 'Gemini could not be stopped with its descendant processes. Inspect running Gemini tasks before retrying.');
+      killPending = kill('SIGTERM').catch((killError) => {
+        const operatingSystemCode = /^[A-Z][A-Z0-9_]{0,63}$/.test(killError?.code || '') ? killError.code : 'UNKNOWN';
+        terminalError = failure('PROCESS_TERMINATION_FAILED', `Gemini could not be stopped with its descendant processes (${operatingSystemCode}). Inspect running Gemini tasks before retrying.`);
+        terminalError.terminationCode = operatingSystemCode;
         child.kill('SIGKILL');
         child.stdout.destroy();
         child.stderr.destroy();

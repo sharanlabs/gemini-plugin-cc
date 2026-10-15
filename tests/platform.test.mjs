@@ -4,7 +4,7 @@ import { mkdtemp, mkdir, writeFile, rm, readFile, symlink, realpath } from 'node
 import { tmpdir } from 'node:os';
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { spawn, execFile } from 'node:child_process';
+import { spawn, execFile, execFileSync } from 'node:child_process';
 import { promisify } from 'node:util';
 import {
   assertWindowsLocalPath,
@@ -146,3 +146,41 @@ test('owned process tree termination kills a live descendant', async () => {
     await rm(root, { recursive: true, force: true });
   }
 });
+
+test('macOS cancellation reaps a zombie group before treating EPERM as a permission failure',
+  { skip: process.platform !== 'darwin' }, async () => {
+    const child = spawn('/usr/bin/true', [], { detached: true, stdio: 'ignore' });
+    // Keep the parent's event loop from reaping its already-exited child. This
+    // deterministically reproduces the CI race between a CLI probe and abort.
+    let state;
+    const deadline = Date.now() + 3000;
+    do {
+      state = execFileSync('/bin/ps', ['-o', 'stat=', '-p', String(child.pid)], { encoding: 'utf8' }).trim();
+      if (state.startsWith('Z')) break;
+      Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, 10);
+    } while (Date.now() < deadline);
+    assert.match(state, /^Z/, 'the owned child reached the unreaped zombie state');
+    assert.equal(child.exitCode, null);
+    assert.throws(() => process.kill(-child.pid, 'SIGTERM'), { code: 'EPERM' });
+    await terminateProcessTree(child, 'SIGTERM');
+    assert.notEqual(child.exitCode, null);
+    assert.throws(() => process.kill(-child.pid, 0), { code: 'ESRCH' });
+  });
+
+test('macOS cancellation still rejects a live group permission failure',
+  { skip: process.platform !== 'darwin' }, async () => {
+    const child = spawn(process.execPath, ['-e', 'setInterval(()=>{},1000)'], { detached: true, stdio: 'ignore' });
+    const originalKill = process.kill;
+    try {
+      process.kill = (pid, signal) => {
+        if (pid === -child.pid) throw Object.assign(new Error('synthetic permission failure'), { code: 'EPERM' });
+        return originalKill(pid, signal);
+      };
+      await assert.rejects(terminateProcessTree(child, 'SIGTERM'), { code: 'EPERM' });
+      assert.equal(child.exitCode, null);
+      assert.equal(child.signalCode, null);
+    } finally {
+      process.kill = originalKill;
+      await terminateProcessTree(child, 'SIGKILL');
+    }
+  });

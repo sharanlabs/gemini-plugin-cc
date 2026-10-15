@@ -133,6 +133,15 @@ function fixedProcess(command, args, { env = process.env, timeoutMs = 30000 } = 
   });
 }
 
+function waitForOwnedChildExit(child, timeoutMs) {
+  if (child.exitCode !== null || child.signalCode !== null) return Promise.resolve(true);
+  return new Promise((accept) => {
+    const exited = () => { clearTimeout(timer); accept(true); };
+    const timer = setTimeout(() => { child.removeListener('exit', exited); accept(false); }, timeoutMs);
+    child.once('exit', exited);
+  });
+}
+
 export async function terminateProcessTree(child, signal = 'SIGTERM') {
   if (!Number.isSafeInteger(child?.pid) || child.pid <= 0) return;
   if (process.platform === 'win32') {
@@ -151,7 +160,19 @@ export async function terminateProcessTree(child, signal = 'SIGTERM') {
     }
   } else {
     try { process.kill(-child.pid, signal); }
-    catch (error) { if (error.code !== 'ESRCH') throw error; }
+    catch (error) {
+      if (error.code === 'ESRCH') return;
+      // macOS reports EPERM for a group containing only an unreaped zombie.
+      // Yield until this owned child's exit is observed, then signal its group
+      // again so surviving descendants still receive the requested termination.
+      // A live child or a remaining permission failure must still fail closed.
+      if (process.platform === 'darwin' && error.code === 'EPERM' && await waitForOwnedChildExit(child, 250)) {
+        try { process.kill(-child.pid, signal); }
+        catch (retryError) { if (retryError.code !== 'ESRCH') throw retryError; }
+        return;
+      }
+      throw error;
+    }
   }
 }
 
