@@ -41,8 +41,15 @@ if (-not $nodePath) {
       Write-Host 'Downloading private Node.js from nodejs.org; existing software is preserved.'
       [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
       Invoke-WebRequest -Uri "https://nodejs.org/download/release/v24.22.0/$archive" -OutFile $download -UseBasicParsing
-      if ((Get-FileHash -LiteralPath $download -Algorithm SHA256).Hash.ToLowerInvariant() -ne $expected) { throw 'Node.js checksum mismatch. Installation stopped.' }
-      Expand-Archive -LiteralPath $download -DestinationPath $temporary
+      # Use framework APIs so checksum verification and ZIP extraction do not
+      # depend on optional PowerShell cmdlet module discovery.
+      $sha256 = [System.Security.Cryptography.SHA256]::Create()
+      $archiveStream = [System.IO.File]::OpenRead($download)
+      try { $actual = [System.BitConverter]::ToString($sha256.ComputeHash($archiveStream)).Replace('-', '').ToLowerInvariant() }
+      finally { $archiveStream.Dispose(); $sha256.Dispose() }
+      if ($actual -ne $expected) { throw 'Node.js checksum mismatch. Installation stopped.' }
+      [void][System.Reflection.Assembly]::Load('System.IO.Compression.FileSystem')
+      [System.IO.Compression.ZipFile]::ExtractToDirectory($download, $temporary)
       New-Item -ItemType Directory -Path $runtimeParent -Force | Out-Null
       if (Test-Path -LiteralPath $runtime) { throw 'Incomplete Node runtime exists. Inspect it before retrying.' }
       Move-Item -LiteralPath (Join-Path $temporary "node-v24.22.0-win-$arch") -Destination $runtime
