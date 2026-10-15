@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.2.1 — 2026-10-15
+
+- Prevent delegated requests from opening browser consent or treating task input as a sign-in answer when cached Google authentication is unavailable.
+- Report the pinned CLI authentication failure with clear steps to finish interactive sign-in; keep malformed structured output rejected.
+- Clarify that browser sign-in must return to the Gemini chat prompt before exiting.
+
 ## 0.2.0 — 2026-10-15
 
 - Add Windows review, advice, judgment, investigation, implementation, jobs and continuation. Windows edits use bounded validated proposals in owned task worktrees.

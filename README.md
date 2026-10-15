@@ -4,9 +4,9 @@ Use Gemini as an independent reviewer, judge, advisor, investigator, or implemen
 
 ## Install
 
-1. Download and extract the [macOS installer](https://github.com/sharanlabs/gemini-plugin-cc/releases/download/v0.2.0/gemini-companion-macos-v0.2.0.zip) or [Windows installer](https://github.com/sharanlabs/gemini-plugin-cc/releases/download/v0.2.0/gemini-companion-windows-v0.2.0.zip).
+1. Download and extract the [macOS installer](https://github.com/sharanlabs/gemini-plugin-cc/releases/download/v0.2.1/gemini-companion-macos-v0.2.1.zip) or [Windows installer](https://github.com/sharanlabs/gemini-plugin-cc/releases/download/v0.2.1/gemini-companion-windows-v0.2.1.zip).
 2. Open **Install.command** on Mac or **Install.cmd** on Windows. Setup installs the supported Gemini CLI privately. If Git or Claude Code is missing, follow the official setup it opens, then run the installer again.
-3. Open **Sign in to Gemini**, choose **Sign in with Google**, and finish in your browser. Exit Gemini with `/quit`, then open **Launch Claude** in the installed folder.
+3. Open **Sign in to Gemini**, choose **Sign in with Google**, and finish in your browser. Wait for the Gemini chat prompt, then exit with `/quit`, then open **Launch Claude** in the installed folder.
 
 In Claude Code, run:
 

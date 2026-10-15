@@ -1,5 +1,13 @@
 # Validation record
 
+## 0.2.1 — 2026-10-15
+
+A real authenticated setup attempt exposed an upstream OAuth consent prompt on structured stdout when reusable Google authentication was unavailable. Delegated subprocesses now force browser suppression, and the pinned CLI authentication exit code is reported as `AUTH_REQUIRED` with interactive sign-in guidance. No credential contents were inspected. This fixes startup failure handling; it does not establish account entitlement or successful model use.
+
+Regression checks cover overriding inherited browser settings, safe authentication diagnostics, strict malformed-stream rejection, the real upstream authentication exit code, and actual configuration loading with browser suppression on macOS and Windows. Run the checks below to reproduce; authenticated model and Claude-to-Gemini routing checks remain pending successful saved Google sign-in.
+
+Local macOS results: **131 passed, 0 failed, 6 platform/upstream-only skips**; pinned-upstream checks: **30 passed, 0 failed, 0 skipped**. Syntax/JSON, whitespace checks and all four Claude marketplace/plugin/component validators pass.
+
 ## 0.2.0 — 2026-10-15
 
 The release adds native Windows execution, validated Windows edit proposals, and downloadable macOS/Windows installers. The historical 0.1.1 platform limitations below describe that older release.
@@ -8,7 +16,9 @@ Local macOS checks: **130 passed, 0 failed, 6 platform/upstream-only skips**; re
 
 GitHub CI runs Node 20/22/24 on Windows, macOS and Ubuntu. Separate macOS/Windows jobs exercise actual upstream configuration and native read tools, plus ZIP extraction, checksums, private Gemini startup, real Claude plugin registration, installed/enabled version, rerun and platform bootstrap without Node on PATH. The Windows bootstrap runs through Windows PowerShell 5.1, matching the download launcher. These checks use isolated configuration and make no model request.
 
-Independent implementation, platform, installer-security and Astra reviews produced concrete regressions that were fixed: Windows CRLF/path behavior, process exit races, baseline files hidden by changed ignore rules, untracked sensitive files in archives, assistant configuration in context, alternate authentication selectors during sign-in, and launchers pinned to a pruned Claude version. Astra's core offline verdict passed; its release verdict depends on final platform and installer evidence. Review evidence does not certify arbitrary model responses.
+All **13 jobs passed** for the published 0.2.0 tree, including the [main-branch run](https://github.com/sharanlabs/gemini-plugin-cc/actions/runs/38738860739). The public macOS/Windows ZIP downloads and uploaded SHA-256 checksums were verified after publication. Astra's final independent verdict passed the tested installer/offline runtime scope; authenticated provider and live coordinator acceptance remained pending.
+
+Independent implementation, platform, installer-security and Astra reviews produced concrete regressions that were fixed: Windows CRLF/path behavior, process exit races, baseline files hidden by changed ignore rules, untracked sensitive files in archives, assistant configuration in context, alternate authentication selectors during sign-in, and launchers pinned to a pruned Claude version. Review evidence does not certify arbitrary model responses.
 
 Reproduce the release checks:
 
