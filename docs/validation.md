@@ -1,5 +1,13 @@
 # Validation record
 
+## Provider acceptance failed — 2026-10-15
+
+A live user account attempt returned `This client is no longer supported for Gemini Code Assist for individuals`. Google's [current deprecation record](https://developers.google.com/gemini-code-assist/docs/deprecations) confirms that personal free, Pro and Ultra requests through Gemini CLI ended on June 18, 2026. Its [Antigravity FAQ](https://antigravity.google/docs/faq/#can-i-use-antigravity-cli-headless-mode-in-third-party-coding-agents-or-automate-account-switching) also excludes wrapping the replacement CLI inside consumer third-party coding agents, explicitly including Claude Code.
+
+The intended subscription-only Claude Code integration therefore does not pass acceptance. Earlier sign-in and installation checks established only the enumerated local/component behavior. Their passing results do not establish supported provider access. Browser handling changes cannot resolve this service rejection. No Antigravity wrapper, token reuse, credential migration, or API-key fallback has been added.
+
+The historical results below are retained for audit and must not be read as consumer release-readiness certification. Source and release notices now identify the blocker. The official standalone Antigravity CLI offers its own local browser sign-in separately from Claude Code.
+
 ## 0.2.2 — 2026-10-15
 
 A user screenshot identified the exact interactive failure: `Authentication consent could not be obtained`. Public pinned CLI source and a credential-free reproduction confirmed that initial authentication runs before the UI registers its consent listener; a rejected authentication promise is then reused by menu retries. The sign-in launcher now sets the supported `NO_BROWSER=true` option to use Google's link-and-code flow, retaining normal Google account authentication and CLI-managed credential storage. No credential contents were inspected or copied.
