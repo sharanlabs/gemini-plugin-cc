@@ -1,6 +1,7 @@
 name: CI
 on:
   push:
+    branches: [main]
   pull_request:
 permissions:
   contents: read
@@ -10,9 +11,9 @@ jobs:
       fail-fast: false
       matrix:
         node: [20, 22, 24]
-        os: [ubuntu-latest, macos-latest]
+        os: [ubuntu-latest, macos-latest, windows-latest]
     runs-on: ${{ matrix.os }}
-    timeout-minutes: 10
+    timeout-minutes: 20
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
       - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
@@ -21,11 +22,35 @@ jobs:
       - run: npm test
       - run: npm run check
   upstream-policy:
-    runs-on: macos-latest
-    timeout-minutes: 10
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [macos-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 20
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
       - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
         with:
           node-version: 24
       - run: npm run test:upstream
+  installer:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [macos-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: 24
+      - name: Install official Claude CLI for integration checks (macOS)
+        if: runner.os == 'macOS'
+        run: curl --proto '=https' --tlsv1.2 -fsSL https://claude.ai/install.sh | bash -s 2.1.300
+      - name: Install official Claude CLI for integration checks (Windows)
+        if: runner.os == 'Windows'
+        shell: powershell
+        run: '& ([scriptblock]::Create((Invoke-RestMethod https://claude.ai/install.ps1))) 2.1.300'
+      - run: node scripts/verify-installer.mjs

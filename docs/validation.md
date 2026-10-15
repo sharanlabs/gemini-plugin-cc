@@ -1,5 +1,28 @@
 # Validation record
 
+## 0.2.0 — 2026-10-15
+
+The release adds native Windows execution, validated Windows edit proposals, and downloadable macOS/Windows installers. The historical 0.1.1 platform limitations below describe that older release.
+
+Local macOS checks: **130 passed, 0 failed, 6 platform/upstream-only skips**; real pinned-upstream verification: **29 passed, 0 failed, 0 skipped**. JavaScript syntax/JSON and whitespace checks pass. Installer tests cover Google-only sign-in isolation, version validation, stable launchers after updates, failed setup recovery, immutable release packaging and sensitive-path exclusions.
+
+GitHub CI runs Node 20/22/24 on Windows, macOS and Ubuntu. Separate macOS/Windows jobs exercise actual upstream configuration and native read tools, plus ZIP extraction, checksums, private Gemini startup, real Claude plugin registration, installed/enabled version, rerun and platform bootstrap without Node on PATH. The Windows bootstrap runs through Windows PowerShell 5.1, matching the download launcher. These checks use isolated configuration and make no model request.
+
+Independent implementation, platform, installer-security and Astra reviews produced concrete regressions that were fixed: Windows CRLF/path behavior, process exit races, baseline files hidden by changed ignore rules, untracked sensitive files in archives, assistant configuration in context, alternate authentication selectors during sign-in, and launchers pinned to a pruned Claude version. Astra's core offline verdict passed; its release verdict depends on final platform and installer evidence. Review evidence does not certify arbitrary model responses.
+
+Reproduce the release checks:
+
+```sh
+npm test
+npm run check
+npm run test:upstream
+node scripts/verify-installer.mjs
+```
+
+`verify-installer` requires Claude Code and Git, downloads public pinned runtimes, and uses disposable state. `npm run pack -- --out <directory>` requires a clean committed source tree and writes the platform ZIPs and SHA-256 checksums from immutable Git objects.
+
+Google browser sign-in, account entitlement, authenticated Gemini responses and live Claude-to-Gemini coordination remain a separate acceptance check. After signing in, run `/gemini:setup --check-auth` and `npm run test:live -- --run`. Credentials are never inspected or copied by the validation tools. Download launchers are unsigned; operating-system or organization policy can require an explicit open action. Git and Claude Code remain prerequisites, with official setup guidance when missing.
+
 ## 0.1.1 repair — 2026-10-14
 
 Environment: macOS, Node 24.21.0, npm 11.19.0, Claude Code 2.1.300, installed official Gemini CLI 0.63.0. Google credential contents were never inspected or copied.

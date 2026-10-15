@@ -16,7 +16,7 @@ import {
   cleanText,
 } from './lib/jobs.mjs';
 
-export const help = `Gemini companion for Claude Code (unofficial)
+export const help = `Gemini Companion for Claude Code
 Google sign-in only. No API keys. Gemini CLI ${SUPPORTED_GEMINI_VERSION}; Node 20+.
 
 Commands:
@@ -37,7 +37,7 @@ Commands:
 
 Run options: --cwd <path> --model <id> --web --background --wait --timeout-ms <1000..3600000>
 Rescue continuation: --resume <job-id> or --fresh (no implicit session reuse).
-Edits: macOS native-tool sandbox required automatically; delegated shell is refused.
+Edits: isolated worktree with platform-specific write validation; delegated shell is refused.
 Safe integration: --request <JSON-file> with command/cwd/options; never interpolate task text in shell.
 Output: --json or json:true in a JSON request. Model output is untrusted advisory evidence.
 `;
@@ -98,7 +98,7 @@ export async function dispatch(input) {
         installed: false,
         supported: false,
         authentication: 'not checked',
-        instructions: `Install Gemini CLI ${SUPPORTED_GEMINI_VERSION} yourself, run gemini, and choose Sign in with Google. No settings were changed.`,
+        instructions: `Run the downloadable installer, then open its Sign in to Gemini shortcut and choose Sign in with Google. Manual installations require Gemini CLI ${SUPPORTED_GEMINI_VERSION}.`,
       };
     }
     let auth = 'not checked (use --check-auth for a minimal Google-authenticated request)';
@@ -119,7 +119,7 @@ export async function dispatch(input) {
       authentication: auth,
       authMode: 'Google sign-in only',
       instructions: probe.supported
-        ? 'Run gemini interactively and choose Sign in with Google if you have not signed in.'
+        ? 'Open Sign in to Gemini from the installed folder (or run gemini for a manual installation), then choose Sign in with Google.'
         : `Requires the tested Gemini CLI ${SUPPORTED_GEMINI_VERSION}; existing installation was not changed.`,
     };
   }

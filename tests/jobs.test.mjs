@@ -62,6 +62,15 @@ test('implementation runs in a worktree, then applies only incremental changes',
       store,
       runner: async (args) => {
         assert.notEqual(args.cwd, root);
+        if (process.platform === 'win32') {
+          assert.equal(args.mode, 'edit-proposal');
+          return {
+            ...reply,
+            response: JSON.stringify({ summary: reply.response, changes: [
+              { path: 'app.js', operation: 'write', content: 'export const value = 3;\n' },
+            ] }),
+          };
+        }
         assert.equal(args.mode, 'edit');
         await writeFile(join(args.cwd, 'app.js'), 'export const value = 3;\n');
         return reply;

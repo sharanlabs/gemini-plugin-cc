@@ -7,10 +7,13 @@ import { SUPPORTED_GEMINI_VERSION } from '../plugins/gemini/scripts/lib/runtime.
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const scratch = await mkdtemp(join(tmpdir(), 'gemini-upstream-verification-'));
 try {
+  const npmEntry = process.env.npm_execpath || (process.platform === 'win32'
+    ? join(dirname(process.execPath), 'node_modules', 'npm', 'bin', 'npm-cli.js') : undefined);
   const packed = JSON.parse(
     execFileSync(
-      'npm',
+      npmEntry ? process.execPath : 'npm',
       [
+        ...(npmEntry ? [npmEntry] : []),
         'pack',
         `@google/gemini-cli@${SUPPORTED_GEMINI_VERSION}`,
         '--ignore-scripts',

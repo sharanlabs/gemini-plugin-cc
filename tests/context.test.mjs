@@ -253,3 +253,24 @@ test('context preserves changes even when the tracked filename inventory is larg
   assert.match(result.text, /regression = true/);
   assert.ok(Buffer.byteLength(result.text) <= 2000);
 });
+
+test('snapshot preserves exact LF source bytes with automatic CRLF conversion configured', async (t) => {
+  const { root, destination } = await fixture(t);
+  await git(root, 'config', 'core.autocrlf', 'true');
+  await writeFile(join(root, 'app.js'), 'export const value = 2;\n');
+  await git(root, 'add', 'app.js');
+  await writeFile(join(root, 'app.js'), 'export const value = 3;\n');
+  const task = await createTaskWorktree({ cwd: root, destination });
+  assert.equal(await readFile(join(task.root, 'app.js'), 'utf8'), 'export const value = 3;\n');
+  assert.equal(await readFile(join(root, 'app.js'), 'utf8'), 'export const value = 3;\n');
+});
+
+test('assistant account configuration never enters collected task context', async (t) => {
+  const { root } = await fixture(t);
+  for (const directory of ['.codex', '.claude', '.gemini']) {
+    await mkdir(join(root, directory));
+    await writeFile(join(root, directory, 'config.toml'), 'private-account-context-do-not-send\n');
+  }
+  const context = await collectContext({ cwd: root, mode: 'review' });
+  assert.doesNotMatch(context.text, /private-account-context-do-not-send/);
+});

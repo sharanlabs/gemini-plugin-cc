@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.2.0 — 2026-10-15
+
+- Add Windows review, advice, judgment, investigation, implementation, jobs and continuation. Windows edits use bounded validated proposals in owned task worktrees.
+- Add downloadable macOS and Windows installers with verified private Node bootstrap, pinned Gemini CLI, stable launch/sign-in shortcuts, rerun support and version checks.
+- Protect Windows state with private DACLs, launch npm entry points through Node, and cancel owned process trees.
+- Preserve exact source line endings, tracked executable modes, staged changes and baseline files hidden by new ignore rules.
+- Package only immutable committed source, reject tracked sensitive paths, and publish checksums.
+- Simplify installation and usage documentation and add real Windows, upstream and installer CI.
+
 ## 0.1.1 — 2026-10-14
 
 - Replace ignored temporary system settings with a private per-job control workspace. Trust is established before Gemini loads settings; normal Google authentication stays in its original location.

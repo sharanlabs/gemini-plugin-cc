@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { mkdtemp, rm, chmod, access, realpath } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { fileURLToPath } from 'node:url';
+import { fileURLToPath, pathToFileURL } from 'node:url';
 import { execFileSync } from 'node:child_process';
 import { probeGemini, runGemini } from '../plugins/gemini/scripts/lib/runtime.mjs';
 const binary = fileURLToPath(new URL('./fixtures/fake-gemini.mjs', import.meta.url));
@@ -66,7 +66,7 @@ test(
   'upstream 0.63.0 policy engine enforces tool and expansion restrictions',
   { skip: !process.env.GEMINI_TEST_BUNDLE },
   async () => {
-    const { loadPoliciesFromToml, PolicyEngine } = await import(process.env.GEMINI_TEST_BUNDLE);
+    const { loadPoliciesFromToml, PolicyEngine } = await import(pathToFileURL(process.env.GEMINI_TEST_BUNDLE).href);
     for (const [policy, expected] of [
       ['readonly.toml', ['allow', 'deny', 'deny', 'deny', 'deny']],
       ['edit.toml', ['allow', 'allow', 'deny', 'deny', 'deny']],
@@ -116,7 +116,7 @@ test(
   'upstream macOS tool sandbox allows workspace writes and denies outside writes',
   { skip: !process.env.GEMINI_TEST_BUNDLE || process.platform !== 'darwin' },
   async () => {
-    const { createSandboxManager } = await import(process.env.GEMINI_TEST_BUNDLE);
+    const { createSandboxManager } = await import(pathToFileURL(process.env.GEMINI_TEST_BUNDLE).href);
     const outside = await mkdtemp(join(process.cwd(), '.gemini-sandbox-test-'));
     let prepared;
     try {
@@ -298,4 +298,21 @@ test('direct resume requires retained execution directory', async () => {
   await assert.rejects(runGemini(opts({ resume: 'session-123' })), {
     code: 'RESUME_DIRECTORY_REQUIRED',
   });
+});
+
+test('proposal implementation requires a worktree and exposes only read tools', async () => {
+  await assert.rejects(runGemini(opts({ mode: 'edit-proposal' })), { code: 'WORKTREE_REQUIRED' });
+  const repo = join(cwd, 'proposal-repository');
+  const worktree = join(cwd, 'proposal-linked');
+  execFileSync('git', ['init', repo], { stdio: 'ignore' });
+  execFileSync('git', ['-C', repo, '-c', 'user.name=Test', '-c', 'user.email=test@example.test',
+    'commit', '--allow-empty', '-m', 'fixture'], { stdio: 'ignore' });
+  execFileSync('git', ['-C', repo, 'worktree', 'add', '--detach', worktree], { stdio: 'ignore' });
+  const result = await runGemini(opts({ cwd: worktree, mode: 'edit-proposal', env: { ...process.env, FAKE_CASE: 'inspect' } }));
+  const details = JSON.parse(result.response);
+  assert.equal(details.settings.security.toolSandboxing, false);
+  assert.deepEqual(details.settings.tools.core, ['read_file', 'list_directory', 'grep_search', 'glob']);
+  assert.equal(details.args[details.args.indexOf('--approval-mode') + 1], 'default');
+  assert.ok(details.args[details.args.indexOf('--admin-policy') + 1].endsWith('readonly.toml'));
+  await assert.rejects(runGemini(opts({ cwd: worktree, mode: 'edit-proposal', env: { ...process.env, FAKE_CASE: 'tool' } })), { code: 'TOOL_POLICY_VIOLATION' });
 });

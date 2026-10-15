@@ -1,6 +1,7 @@
 import { readFile, lstat } from 'node:fs/promises';
 import { homedir } from 'node:os';
 import { join, resolve } from 'node:path';
+import { systemConfigurationDirectory } from './platform.mjs';
 
 function unsafe() {
   const error = new Error(
@@ -41,8 +42,7 @@ function stripComments(text) {
 
 export async function assertEditConfiguration({ cwd, env = process.env, systemFiles } = {}) {
   const home = env.HOME || homedir();
-  const defaults =
-    process.platform === 'darwin' ? '/Library/Application Support/GeminiCli' : '/etc/gemini-cli';
+  const defaults = systemConfigurationDirectory();
   for (const file of [
     ...(systemFiles ?? [
       join(defaults, 'settings.json'),

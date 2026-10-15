@@ -23,7 +23,7 @@ const commands = [
   'advisor',
 ];
 const json = async (filename) => JSON.parse(await readFile(path.join(root, filename), 'utf8'));
-const document = (filename) => readFile(path.join(root, filename), 'utf8');
+const document = async (filename) => (await readFile(path.join(root, filename), 'utf8')).replaceAll('\r\n', '\n');
 
 test('marketplace points to the self-contained Gemini plugin', async () => {
   const marketplace = await json('.claude-plugin/marketplace.json');
@@ -34,11 +34,11 @@ test('marketplace points to the self-contained Gemini plugin', async () => {
   assert.equal(marketplace.plugins[0].source, './plugins/gemini');
 });
 
-test('manifest identifies an unofficial community plugin without hidden services', async () => {
+test('manifest identifies Gemini capabilities without hidden services', async () => {
   const manifest = await json('plugins/gemini/.claude-plugin/plugin.json');
   assert.equal(manifest.name, 'gemini');
   assert.match(manifest.version, /^\d+\.\d+\.\d+$/);
-  assert.match(manifest.description, /unofficial/i);
+  assert.match(manifest.description, /Google sign-in/i);
   assert.equal(manifest.license, 'Apache-2.0');
   for (const field of ['hooks', 'mcpServers', 'settings', 'dependencies'])
     assert.equal(manifest[field], undefined);
@@ -100,7 +100,7 @@ test('independent specialist agents delegate model work through skills', async (
 test('documentation explains OAuth, limitations, and provider privacy', async () => {
   const readme = await document('README.md');
   const security = await document('SECURITY.md');
-  assert.match(readme, /unofficial/i);
+  assert.match(readme, /Gemini Companion/);
   assert.match(readme, /Sign in with Google/);
   assert.match(readme, /subscription/i);
   assert.match(readme, /quota/i);
