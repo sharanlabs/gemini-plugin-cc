@@ -509,6 +509,8 @@ export async function runGemini({
       executionDirectory: executionDirectory ? scratch : undefined,
     };
   } finally {
-    if (!executionDirectory) await rm(scratch, { recursive: true, force: true });
+    // Windows may retain a terminated descendant's cwd handle briefly. Retry
+    // only owned temporary-directory removal, never the provider request.
+    if (!executionDirectory) await rm(scratch, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 });
   }
 }
