@@ -48,7 +48,8 @@ if (-not $nodePath) {
       try { $actual = [System.BitConverter]::ToString($sha256.ComputeHash($archiveStream)).Replace('-', '').ToLowerInvariant() }
       finally { $archiveStream.Dispose(); $sha256.Dispose() }
       if ($actual -ne $expected) { throw 'Node.js checksum mismatch. Installation stopped.' }
-      [void][System.Reflection.Assembly]::Load('System.IO.Compression.FileSystem')
+      $compressionAssembly = [IO.Path]::Combine([Runtime.InteropServices.RuntimeEnvironment]::GetRuntimeDirectory(), 'System.IO.Compression.FileSystem.dll')
+      [void][System.Reflection.Assembly]::LoadFrom($compressionAssembly)
       [System.IO.Compression.ZipFile]::ExtractToDirectory($download, $temporary)
       New-Item -ItemType Directory -Path $runtimeParent -Force | Out-Null
       if (Test-Path -LiteralPath $runtime) { throw 'Incomplete Node runtime exists. Inspect it before retrying.' }
