@@ -1,8 +1,16 @@
 # Gemini Companion for Claude Code
 
-Use Gemini as an independent reviewer, judge, advisor, investigator, or implementation partner inside Claude Code. Use **Sign in with Google**—no API key required.
+**Personal Google subscription support is unavailable. Do not use the v0.2.x installers for free, Google AI Pro, or Ultra account access inside Claude Code.**
 
-## Install
+Google [ended Gemini CLI access for these accounts on June 18, 2026](https://developers.google.com/gemini-code-assist/docs/deprecations). Google also [explicitly excludes wrapping Antigravity CLI inside Claude Code or other third-party coding agents under consumer plans](https://antigravity.google/docs/faq/#can-i-use-antigravity-cli-headless-mode-in-third-party-coding-agents-or-automate-account-switching). Changing browser handling or copying an authorization code cannot restore this backend's personal-account access.
+
+The released installers and component tests do **not** establish a working consumer subscription integration. A live account attempt returned: `This client is no longer supported for Gemini Code Assist for individuals.` Earlier instructions below are retained as historical implementation reference; they are not a supported installation path for these accounts.
+
+For automatic browser sign-in with a personal account, use the [official standalone Antigravity CLI](https://github.com/google-antigravity/antigravity-cli#authentication). It runs separately from Claude Code. This project does not wrap Antigravity consumer authentication or introduce an API-key fallback.
+
+## Historical implementation and installation
+
+The v0.2.x implementation delegates independent review, judgment, advice, investigation, and isolated implementation to Gemini CLI 0.63.0 through **Sign in with Google**. Provider access for the intended personal-account workflow has failed live validation. Other account types are not certified by this project's offline tests.
 
 1. Download and extract the [macOS installer](https://github.com/sharanlabs/gemini-plugin-cc/releases/download/v0.2.2/gemini-companion-macos-v0.2.2.zip) or [Windows installer](https://github.com/sharanlabs/gemini-plugin-cc/releases/download/v0.2.2/gemini-companion-windows-v0.2.2.zip).
 2. Open **Install.command** on Mac or **Install.cmd** on Windows. Setup installs the supported Gemini CLI privately. If Git or Claude Code is missing, follow the official setup it opens, then run the installer again.

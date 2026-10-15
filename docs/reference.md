@@ -1,5 +1,7 @@
 # Developer reference
 
+**Current support status:** the v0.2.x consumer subscription workflow is unavailable. Google [retired personal free, Pro and Ultra access through Gemini CLI on June 18, 2026](https://developers.google.com/gemini-code-assist/docs/deprecations), and its [Antigravity FAQ excludes consumer CLI wrappers inside third-party coding agents](https://antigravity.google/docs/faq/#can-i-use-antigravity-cli-headless-mode-in-third-party-coding-agents-or-automate-account-switching). The implementation and setup instructions below are historical reference, not a supported consumer sign-in workaround. No successful personal-account model execution has been verified.
+
 A plugin that gives Claude Code separate Gemini specialists for code review, adversarial analysis, acceptance judgment, decision advice, debugging, and isolated implementation. It uses Google's official Gemini CLI with your normal **Sign in with Google** authentication. No API key or direct model API integration is required.
 
 ## How it works
