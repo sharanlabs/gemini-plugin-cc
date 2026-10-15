@@ -47,9 +47,9 @@ export async function git(cwd, args, { env, input } = {}) {
   });
 }
 
-async function entries(cwd) {
+async function entries(cwd, additionalPaths = []) {
   const listing = await git(cwd, ['ls-files', '-z', '--cached', '--others', '--exclude-standard']);
-  const paths = [...new Set(listing.split('\0').filter(Boolean))].sort();
+  const paths = [...new Set([...listing.split('\0').filter(Boolean), ...additionalPaths])].sort();
   const assistantSettings = (path) => /(?:^|\/)(?:\.claude|\.codex|\.gemini)(?:\/|$)/.test(path);
   const dirtyPaths = (await git(cwd, ['diff', '--name-only', '-z', 'HEAD', '--'])).split('\0');
   if (dirtyPaths.some(assistantSettings)) {
@@ -115,7 +115,10 @@ async function entries(cwd) {
     result.push({
       path,
       data,
-      mode: s.isSymbolicLink() ? '120000' : s.mode & 0o111 ? '100755' : '100644',
+      // Windows does not expose executable permission bits. Preserve Git's indexed mode.
+      mode: s.isSymbolicLink() ? '120000'
+        : process.platform === 'win32' ? (index.get(path)?.mode || '100644')
+        : s.mode & 0o111 ? '100755' : '100644',
     });
   }
   return result;
@@ -134,13 +137,13 @@ export async function fingerprint(cwd) {
   return hash.digest('hex');
 }
 
-export async function captureTree(cwd) {
+export async function captureTree(cwd, { additionalPaths = [] } = {}) {
   const scratch = await mkdtemp(join(tmpdir(), 'gemini-tree-'));
   const env = { GIT_INDEX_FILE: join(scratch, 'index') };
   try {
     await git(cwd, ['read-tree', '--empty'], { env });
     let info = '';
-    for (const item of await entries(cwd)) {
+    for (const item of await entries(cwd, additionalPaths)) {
       if (item.deleted) continue;
       else {
         const oid =
@@ -158,7 +161,9 @@ export async function captureTree(cwd) {
 
 export async function makePatch(cwd, baseTree) {
   if (!/^[a-f0-9]{40,64}$/.test(baseTree)) throw new Error('Invalid baseline tree');
-  const finalTree = await captureTree(cwd);
+  // Ignore-rule edits must not turn a still-present baseline file into a deletion.
+  const baselinePaths = (await git(cwd, ['ls-tree', '-r', '--name-only', '-z', baseTree])).split('\0').filter(Boolean);
+  const finalTree = await captureTree(cwd, { additionalPaths: baselinePaths });
   const raw = await git(cwd, ['diff', '--raw', '-z', baseTree, finalTree]);
   for (const record of raw.split('\0'))
     if (record.startsWith(':') && /120000|160000/.test(record))

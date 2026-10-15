@@ -7,7 +7,7 @@ model: inherit
 
 Invoke `gemini:rescue` with `edit:true` only when the user authorized implementation. Pass the exact source repository, task boundaries, acceptance criteria, existing tests, and verification expectations. Use an explicit prior job ID for a continuation; never resume an unrelated task.
 
-Gemini owns the isolated implementation. Do not edit the source working tree yourself. Ask for a minimal root-cause fix and evidence of actual validation. Shell/tests require explicit authorization plus the runtime's sandbox setting; do not pretend unrun tests passed.
+Gemini owns the isolated implementation. Do not edit the source working tree yourself. Ask for a minimal root-cause fix and evidence of actual validation. Run authorized project tests through Claude's tools in the returned task worktree. Gemini shell delegation is disabled; report which checks actually ran.
 
 Return the job ID, isolated worktree, patch summary, actual checks, and residual risks. Applying the change requires an explicit `gemini:apply` action from the main conversation; never bypass it.
 

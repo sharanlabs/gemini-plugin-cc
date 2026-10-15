@@ -298,3 +298,112 @@ test(
     }
   },
 );
+
+test(
+  'real upstream proposal execution loads read-only tools and disables inherited integrations',
+  { skip: !process.env.GEMINI_TEST_BUNDLE },
+  async () => {
+    const scratch = await mkdtemp(join(tmpdir(), 'gemini-real-readonly-'));
+    try {
+      const home = join(scratch, 'home');
+      const source = join(scratch, 'source');
+      const target = join(scratch, 'task');
+      const control = join(scratch, 'control');
+      await mkdir(join(home, '.gemini'), { recursive: true });
+      await mkdir(source);
+      await writeFile(join(source, 'source.txt'), 'synthetic original source\n');
+      execFileSync('git', ['init', source], { stdio: 'ignore' });
+      execFileSync('git', ['-C', source, 'add', '.'], { stdio: 'ignore' });
+      execFileSync('git', ['-C', source, '-c', 'user.name=Fixture', '-c', 'user.email=fixture@example.test',
+        'commit', '-m', 'fixture'], { stdio: 'ignore' });
+      execFileSync('git', ['-C', source, 'worktree', 'add', '--detach', target], { stdio: 'ignore' });
+      await writeFile(join(home, '.gemini', '.env'), 'GEMINI_FIXTURE_DOTENV_MARKER=must_not_load\n');
+      const marker = join(scratch, 'integration-started');
+      const syntheticMcp = { command: process.execPath, args: ['-e', `require('node:fs').writeFileSync(${JSON.stringify(marker)}, 'started')`] };
+      await writeFile(join(home, '.gemini', 'settings.json'), JSON.stringify({
+        hooksConfig: { enabled: true }, skills: { enabled: true },
+        experimental: { gemmaModelRouter: { enabled: true } }, ide: { enabled: true },
+        mcpServers: { synthetic: syntheticMcp },
+      }));
+      const extension = join(home, '.gemini', 'extensions', 'fixture-extension');
+      await mkdir(extension, { recursive: true });
+      await writeFile(join(extension, 'gemini-extension.json'), JSON.stringify({
+        name: 'fixture-extension', version: '1.0.0', mcpServers: { inheritedExtension: syntheticMcp },
+      }));
+      const fake = fileURLToPath(new URL('./fixtures/fake-gemini.mjs', import.meta.url));
+      const inspected = await runGemini({ cwd: target, executionDirectory: control,
+        prompt: 'Fixture only.', mode: 'edit-proposal', binary: fake,
+        env: { ...process.env, HOME: home, USERPROFILE: home, FAKE_CASE: 'inspect' } });
+      const generatedArguments = JSON.parse(inspected.response).args;
+      const bundleDir = dirname(process.env.GEMINI_TEST_BUNDLE);
+      const names = await readdir(bundleDir);
+      const settingsBundle = names.find((name) => name === 'chunk-HFRGWL72.js');
+      assert.ok(settingsBundle, 'pinned settings bundle packaging');
+      let cliSource;
+      for (const name of names.filter((name) => /^gemini-.*\.js$/.test(name))) {
+        const content = await readFile(join(bundleDir, name), 'utf8');
+        if (content.includes('async function loadCliConfig(')) { cliSource = content; break; }
+      }
+      assert.ok(cliSource, 'pinned loadCliConfig source');
+      cliSource = cliSource.replace(/(["'])\.\/([^"']+)\1/g,
+        (_match, quote, name) => `${quote}${pathToFileURL(join(bundleDir, name)).href}${quote}`);
+      const exposedCli = join(scratch, 'upstream-cli.mjs');
+      await writeFile(exposedCli, cliSource + '\nexport { loadCliConfig, parseArguments };\n');
+      const script = `
+        import assert from 'node:assert/strict';
+        import { readFile } from 'node:fs/promises';
+        const { loadSettings } = await import(${JSON.stringify(pathToFileURL(join(bundleDir, settingsBundle)).href)});
+        const { ReadFileTool } = await import(${JSON.stringify(pathToFileURL(process.env.GEMINI_TEST_BUNDLE).href)});
+        const { loadCliConfig, parseArguments } = await import(${JSON.stringify(pathToFileURL(exposedCli).href)});
+        const control = ${JSON.stringify(control)}, target = ${JSON.stringify(await realpath(target))};
+        process.argv = [process.execPath, 'gemini', ...${JSON.stringify(generatedArguments)}];
+        const settings = loadSettings(control);
+        assert.equal(settings.isTrusted, true);
+        assert.equal(settings.merged.security.auth.selectedType, 'oauth-personal');
+        assert.equal(settings.merged.security.auth.enforcedType, 'oauth-personal');
+        assert.equal(settings.merged.security.toolSandboxing, false);
+        assert.equal(settings.merged.hooksConfig.enabled, false);
+        assert.equal(settings.merged.skills.enabled, false);
+        assert.equal(settings.merged.experimental.gemmaModelRouter.enabled, false);
+        assert.equal(settings.merged.ide.enabled, false);
+        assert.deepEqual(settings.merged.context.includeDirectories, [target]);
+        assert.equal(process.env.GEMINI_FIXTURE_DOTENV_MARKER, undefined);
+        const argv = await parseArguments(settings.merged);
+        assert.equal(argv.approvalMode, 'default');
+        assert.deepEqual(argv.extensions, ['none']);
+        const config = await loadCliConfig(settings.merged, 'fixture-readonly-session', argv,
+          { cwd: control, loadedSettings: settings, worktreeSettings: {} });
+        const extension = config.getExtensionLoader().getExtensions().find((item) => item.name === 'fixture-extension');
+        assert.ok(extension, 'synthetic extension discovered');
+        assert.equal(extension.isActive, false);
+        assert.equal(config.getEnableHooks(), false);
+        assert.equal(config.getSandboxEnabled(), false);
+        config.geminiClient.initialize = async () => {};
+        config.geminiClient.getHistory = () => [];
+        config.getBaseLlmClient = () => ({ generateContent: () => { throw new Error('Provider call forbidden'); } });
+        config.getDisableLLMCorrection = () => true;
+        await config.initialize();
+        assert.deepEqual(config.getToolRegistry().getAllToolNames().sort(), ['read_file', 'list_directory', 'grep_search', 'glob'].sort());
+        assert.equal(config.mcpClientManager.isBlockedBySettings('synthetic'), true);
+        await assert.rejects(readFile(${JSON.stringify(marker)}), { code: 'ENOENT' });
+        const read = await new ReadFileTool(config).build({ file_path: ${JSON.stringify(join(target, 'source.txt'))} }).execute({ abortSignal: new AbortController().signal });
+        assert.equal(read.error, undefined, read.error?.message);
+        assert.match(JSON.stringify(read), /synthetic original source/);
+        const engine = config.getPolicyEngine();
+        for (const name of ['write_file', 'replace', 'run_shell_command', 'save_memory', 'mcp_remote_tool']) {
+          assert.equal((await engine.check({ name, args: { file_path: target + '/forbidden.txt', content: 'CHANGED' } })).decision, 'deny');
+        }
+        assert.equal(await readFile(${JSON.stringify(join(source, 'source.txt'))}, 'utf8'), 'synthetic original source\\n');
+        await assert.rejects(readFile(target + '/forbidden.txt'), { code: 'ENOENT' });
+        process.exit(0);
+      `;
+      const scriptPath = join(scratch, 'verify-readonly.mjs');
+      await writeFile(scriptPath, script);
+      try {
+        execFileSync(process.execPath, [scriptPath], { cwd: control,
+          env: { ...process.env, HOME: home, USERPROFILE: home, GEMINI_CLI_TRUST_WORKSPACE: 'true' },
+          timeout: 60000, stdio: ['ignore', 'pipe', 'pipe'] });
+      } catch (error) { throw new Error(String(error.stdout) + String(error.stderr)); }
+    } finally { await rm(scratch, { recursive: true, force: true }); }
+  },
+);

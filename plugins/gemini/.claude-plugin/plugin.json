@@ -1,10 +1,16 @@
 {
   "name": "gemini",
-  "version": "0.1.1",
-  "description": "Unofficial Gemini CLI companion: independent review, adversarial analysis, judgment, advice, investigation, and isolated implementation using Google sign-in.",
+  "version": "0.2.0",
+  "description": "Gemini specialists for independent review, judgment, advice, investigation, and implementation using Google sign-in.",
   "author": {
     "name": "Gemini Companion contributors"
   },
   "license": "Apache-2.0",
-  "keywords": ["gemini", "code-review", "adversarial-review", "delegation", "oauth"]
+  "keywords": [
+    "gemini",
+    "code-review",
+    "adversarial-review",
+    "delegation",
+    "oauth"
+  ]
 }

@@ -299,3 +299,20 @@ test('direct resume requires retained execution directory', async () => {
     code: 'RESUME_DIRECTORY_REQUIRED',
   });
 });
+
+test('proposal implementation requires a worktree and exposes only read tools', async () => {
+  await assert.rejects(runGemini(opts({ mode: 'edit-proposal' })), { code: 'WORKTREE_REQUIRED' });
+  const repo = join(cwd, 'proposal-repository');
+  const worktree = join(cwd, 'proposal-linked');
+  execFileSync('git', ['init', repo], { stdio: 'ignore' });
+  execFileSync('git', ['-C', repo, '-c', 'user.name=Test', '-c', 'user.email=test@example.test',
+    'commit', '--allow-empty', '-m', 'fixture'], { stdio: 'ignore' });
+  execFileSync('git', ['-C', repo, 'worktree', 'add', '--detach', worktree], { stdio: 'ignore' });
+  const result = await runGemini(opts({ cwd: worktree, mode: 'edit-proposal', env: { ...process.env, FAKE_CASE: 'inspect' } }));
+  const details = JSON.parse(result.response);
+  assert.equal(details.settings.security.toolSandboxing, false);
+  assert.deepEqual(details.settings.tools.core, ['read_file', 'list_directory', 'grep_search', 'glob']);
+  assert.equal(details.args[details.args.indexOf('--approval-mode') + 1], 'default');
+  assert.ok(details.args[details.args.indexOf('--admin-policy') + 1].endsWith('readonly.toml'));
+  await assert.rejects(runGemini(opts({ cwd: worktree, mode: 'edit-proposal', env: { ...process.env, FAKE_CASE: 'tool' } })), { code: 'TOOL_POLICY_VIOLATION' });
+});

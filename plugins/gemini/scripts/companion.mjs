@@ -16,7 +16,7 @@ import {
   cleanText,
 } from './lib/jobs.mjs';
 
-export const help = `Gemini companion for Claude Code (unofficial)
+export const help = `Gemini Companion for Claude Code
 Google sign-in only. No API keys. Gemini CLI ${SUPPORTED_GEMINI_VERSION}; Node 20+.
 
 Commands:
@@ -37,7 +37,7 @@ Commands:
 
 Run options: --cwd <path> --model <id> --web --background --wait --timeout-ms <1000..3600000>
 Rescue continuation: --resume <job-id> or --fresh (no implicit session reuse).
-Edits: macOS native-tool sandbox required automatically; delegated shell is refused.
+Edits: isolated worktree with platform-specific write validation; delegated shell is refused.
 Safe integration: --request <JSON-file> with command/cwd/options; never interpolate task text in shell.
 Output: --json or json:true in a JSON request. Model output is untrusted advisory evidence.
 `;

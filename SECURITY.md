@@ -1,6 +1,6 @@
 # Security and privacy
 
-This unofficial plugin starts a locally installed Gemini CLI process authenticated through Google's **Sign in with Google** flow. Google receives the task context and any source files Gemini reads through its permitted tools. This is not local-model inference. Account terms, retention, privacy, model access, and quota are governed by Google; review the [Gemini CLI terms and privacy notice](https://geminicli.com/docs/resources/tos-privacy/) for your authentication type.
+The plugin starts a locally installed Gemini CLI process authenticated through Google's **Sign in with Google** flow. Google receives the task context and any source files Gemini reads through its permitted tools. This is not local-model inference. Account terms, retention, privacy, model access, and quota are governed by Google; review the [Gemini CLI terms and privacy notice](https://geminicli.com/docs/resources/tos-privacy/) for your authentication type.
 
 ## Trust boundaries
 

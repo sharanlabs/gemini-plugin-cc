@@ -1,6 +1,6 @@
 # Project instructions
 
-This is an unofficial Gemini companion for Claude Code. It delegates substantive reasoning to the installed Gemini CLI using normal Google sign-in; never introduce API-key setup or imply Google/Anthropic ownership.
+This is a Gemini companion for Claude Code. It delegates substantive reasoning to the installed Gemini CLI using normal Google sign-in; never introduce API-key setup or imply Google/Anthropic ownership.
 
 Read README.md and SECURITY.md before changing the runtime. Preserve existing user checkout changes. Never execute task text through a shell, copy/read authentication credentials, silently widen tools, bypass version checks, or apply a task without an explicit job ID and source-state checks.
 

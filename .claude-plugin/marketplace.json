@@ -4,20 +4,26 @@
     "name": "Gemini Companion contributors"
   },
   "metadata": {
-    "description": "Unofficial Gemini CLI companion for Claude Code",
-    "version": "0.1.1"
+    "description": "Gemini specialists for Claude Code",
+    "version": "0.2.0"
   },
   "plugins": [
     {
       "name": "gemini",
       "source": "./plugins/gemini",
-      "description": "Unofficial independent Gemini specialists using Google sign-in through Gemini CLI",
-      "version": "0.1.1",
+      "description": "Independent Gemini specialists using Google sign-in",
+      "version": "0.2.0",
       "author": {
         "name": "Gemini Companion contributors"
       },
       "license": "Apache-2.0",
-      "keywords": ["gemini", "review", "adversarial-review", "delegation", "google-oauth"]
+      "keywords": [
+        "gemini",
+        "review",
+        "adversarial-review",
+        "delegation",
+        "google-oauth"
+      ]
     }
   ]
 }

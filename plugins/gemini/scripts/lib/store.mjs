@@ -2,7 +2,6 @@ import {
   mkdir,
   lstat,
   realpath,
-  chmod,
   readFile,
   writeFile,
   rename,
@@ -13,6 +12,7 @@ import {
 import { join, resolve, parse } from 'node:path';
 import { homedir } from 'node:os';
 import { createHash, randomUUID } from 'node:crypto';
+import { protectPrivateDirectory, getInstallBase } from './platform.mjs';
 
 const validId = (id) => /^job-[a-f0-9-]{36}$/.test(id);
 
@@ -39,7 +39,7 @@ export async function privateDirectory(path) {
   if (!s.isDirectory() || s.isSymbolicLink()) throw new Error('Invalid state directory');
   if (process.getuid && s.uid !== process.getuid())
     throw new Error('State directory belongs to another user');
-  await chmod(absolute, 0o700);
+  await protectPrivateDirectory(absolute);
   return absolute;
 }
 
@@ -58,7 +58,7 @@ export class JobStore {
   constructor(
     workspace,
     stateRoot = process.env.GEMINI_PLUGIN_STATE_DIR ||
-      join(homedir(), '.local', 'state', 'gemini-plugin-cc'),
+      (process.platform === 'win32' ? join(getInstallBase(), 'state') : join(homedir(), '.local', 'state', 'gemini-plugin-cc')),
   ) {
     this.workspace = resolve(workspace);
     this.stateRoot = resolve(stateRoot);

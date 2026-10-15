@@ -106,3 +106,43 @@ test('unchanged tracked assistant settings are preserved as opaque Git objects',
   await writeFile(join(root, '.claude', 'settings.json'), '{"changed":true}\n');
   await assert.rejects(captureTree(root), /settings.*changed/i);
 });
+
+test('tracked executable mode survives a Windows snapshot', { skip: process.platform !== 'win32' }, async () => {
+  const root = await repo();
+  git(root, 'update-index', '--chmod=+x', 'a.txt');
+  git(root, 'commit', '-qm', 'executable fixture');
+  const base = await captureTree(root);
+  assert.match(git(root, 'ls-tree', base, 'a.txt'), /^100755 /);
+  await writeFile(join(root, 'a.txt'), 'changed\n');
+  const patch = await makePatch(root, base);
+  assert.doesNotMatch(patch, /mode 100(?:644|755)/);
+  assert.match(patch, /changed/);
+});
+
+test('CRLF content and staged bytes survive snapshot and apply', async () => {
+  const root = await repo();
+  git(root, 'config', 'core.autocrlf', 'true');
+  await writeFile(join(root, 'a.txt'), 'staged\r\n');
+  git(root, 'add', 'a.txt');
+  const staged = git(root, 'diff', '--cached', '--binary');
+  await writeFile(join(root, 'a.txt'), 'staged\r\nunstaged\r\n');
+  const before = await fingerprint(root);
+  const base = await captureTree(root);
+  await writeFile(join(root, 'a.txt'), 'staged\r\nunstaged\r\nfix\r\n');
+  const patch = await makePatch(root, base);
+  await writeFile(join(root, 'a.txt'), 'staged\r\nunstaged\r\n');
+  await applyPatch({ cwd: root, patch, expectedFingerprint: before });
+  assert.equal(await readFile(join(root, 'a.txt'), 'utf8'), 'staged\r\nunstaged\r\nfix\r\n');
+  assert.equal(git(root, 'diff', '--cached', '--binary'), staged);
+});
+
+test('changing ignore rules cannot delete baseline untracked files from a patch', async () => {
+  const root = await repo();
+  await writeFile(join(root, 'valuable.txt'), 'user work\n');
+  const baseline = await captureTree(root);
+  await writeFile(join(root, '.gitignore'), 'valuable.txt\n');
+  const patch = await makePatch(root, baseline);
+  assert.doesNotMatch(patch, /deleted file mode/);
+  assert.doesNotMatch(patch, /diff --git a\/valuable.txt/);
+  assert.equal(await readFile(join(root, 'valuable.txt'), 'utf8'), 'user work\n');
+});
