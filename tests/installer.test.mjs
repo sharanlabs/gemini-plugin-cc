@@ -116,6 +116,8 @@ test('download archives include launchers and license without repository state',
   const pack = await import('../scripts/pack.mjs');
   assert.equal(typeof pack.buildArtifacts, 'function', 'packaging exposes downloadable artifacts');
   await writeFile(join(f.source, 'LICENSE'), 'Apache-2.0');
+  await mkdir(join(f.source, '.github', 'workflows'), { recursive: true });
+  await writeFile(join(f.source, '.github', 'workflows', 'ci.yml'), 'name: CI\n');
   await mkdir(join(f.source, 'installer'), { recursive: true });
   await writeFile(join(f.source, 'installer', 'Install.command'), '#!/bin/sh\n');
   await writeFile(join(f.source, 'installer', 'Install.cmd'), '@echo off\r\n');
@@ -130,6 +132,7 @@ test('download archives include launchers and license without repository state',
   const content = await readFile(artifacts[0]);
   assert.ok(content.includes(Buffer.from('gemini-companion-v0.2.0/Install.command')));
   assert.ok(content.includes(Buffer.from('/LICENSE')));
+  assert.ok(content.includes(Buffer.from('/.github/workflows/ci.yml')), 'source downloads include files required by the test suite');
   assert.ok(content.includes(Buffer.from('@echo off\r\n')), 'Windows launchers retain CRLF in the ZIP');
   assert.ok(!content.includes(Buffer.from('do-not-package')));
   assert.ok(!content.includes(Buffer.from('/.env')));

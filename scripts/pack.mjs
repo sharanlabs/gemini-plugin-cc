@@ -4,7 +4,7 @@ import { fileURLToPath } from 'node:url';
 import { createHash } from 'node:crypto';
 import { execFileSync } from 'node:child_process';
 
-const allowed = ['.claude-plugin', 'plugins', 'installer', 'docs', 'scripts', 'tests', 'package.json', 'README.md', 'SECURITY.md', 'LICENSE', 'NOTICE', 'CHANGELOG.md', 'CONTRIBUTING.md', 'AGENTS.md'];
+const allowed = ['.github', '.gitattributes', '.gitignore', '.claude-plugin', 'plugins', 'installer', 'docs', 'scripts', 'tests', 'package.json', 'README.md', 'SECURITY.md', 'LICENSE', 'NOTICE', 'CHANGELOG.md', 'CONTRIBUTING.md', 'AGENTS.md'];
 const crcTable = Array.from({ length: 256 }, (_, n) => {
   for (let i = 0; i < 8; i++) n = n & 1 ? 0xedb88320 ^ (n >>> 1) : n >>> 1;
   return n >>> 0;
