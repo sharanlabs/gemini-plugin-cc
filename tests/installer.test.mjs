@@ -243,7 +243,7 @@ test('installed sign-in shortcut uses the same sanitized Google login boundary',
   for (const key of ['GEMINI_API_KEY', 'GOOGLE_GENAI_USE_VERTEXAI', 'GEMINI_CLI_HOME', 'NODE_OPTIONS']) assert.equal(details.env[key], undefined);
   assert.equal(details.env.HOME, process.env.HOME);
   assert.equal(details.env.USERPROFILE, process.env.USERPROFILE);
-  assert.equal(details.cwd, await realpath(join(f.base, 'login')));
+  assert.equal(await realpath(details.cwd), await realpath(join(f.base, 'login')));
   assert.equal(JSON.parse(await readFile(join(details.cwd, '.gemini', 'settings.json'), 'utf8')).security.auth.enforcedType, 'oauth-personal');
 });
 
