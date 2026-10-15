@@ -43,6 +43,7 @@ export function validateProposalPath(path) {
       /^(?:con|prn|aux|nul|conin\$|conout\$|com[1-9¹²³]|lpt[1-9¹²³])(?:\.|$)/i.test(part) ||
       /^(?:\.git|\.hg|\.svn|\.gnupg|\.claude|\.codex|\.gemini|node_modules)$/i.test(part)) ||
       sensitivePath(path) ||
+      /(?:^|\/)(?:\.env[^/]*|\.pypirc|\.boto|id_(?:dsa|ecdsa)(?:\.pub)?)(?:\/|$)/i.test(path) ||
       /(?:^|\/)(?:tokens?|auth)(?:[._-][^/]*)?\.(?:json|ya?ml|toml|ini|txt)$/i.test(path) ||
       /(?:^|\/)(?:oauth_creds|google_accounts|application_default_credentials)\.json$/i.test(path) ||
       /(?:^|\/)(?:service[-_]account[^/]*|[^/]*firebase-adminsdk[^/]*)\.json$/i.test(path) ||

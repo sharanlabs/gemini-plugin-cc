@@ -98,7 +98,7 @@ export async function dispatch(input) {
         installed: false,
         supported: false,
         authentication: 'not checked',
-        instructions: `Install Gemini CLI ${SUPPORTED_GEMINI_VERSION} yourself, run gemini, and choose Sign in with Google. No settings were changed.`,
+        instructions: `Run the downloadable installer, then open its Sign in to Gemini shortcut and choose Sign in with Google. Manual installations require Gemini CLI ${SUPPORTED_GEMINI_VERSION}.`,
       };
     }
     let auth = 'not checked (use --check-auth for a minimal Google-authenticated request)';
@@ -119,7 +119,7 @@ export async function dispatch(input) {
       authentication: auth,
       authMode: 'Google sign-in only',
       instructions: probe.supported
-        ? 'Run gemini interactively and choose Sign in with Google if you have not signed in.'
+        ? 'Open Sign in to Gemini from the installed folder (or run gemini for a manual installation), then choose Sign in with Google.'
         : `Requires the tested Gemini CLI ${SUPPORTED_GEMINI_VERSION}; existing installation was not changed.`,
     };
   }

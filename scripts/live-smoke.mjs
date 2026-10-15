@@ -14,6 +14,8 @@ import { tmpdir } from 'node:os';
 import { dirname, join, relative, resolve, isAbsolute } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { SUPPORTED_GEMINI_VERSION } from '../plugins/gemini/scripts/lib/runtime.mjs';
+import { terminateProcessTree } from '../plugins/gemini/scripts/lib/platform.mjs';
+import { privateDirectory } from '../plugins/gemini/scripts/lib/store.mjs';
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const companion = join(root, 'plugins', 'gemini', 'scripts', 'companion.mjs');
@@ -187,18 +189,17 @@ function execute(binary, args, { cwd, env, timeoutMs = 30000, signal } = {}) {
     let total = 0;
     let failure;
     let killTimer;
-    const kill = (sig) => {
-      try {
-        if (process.platform === 'win32') child.kill(sig);
-        else if (child.pid) process.kill(-child.pid, sig);
-      } catch {}
-    };
+    let killPending;
+    const kill = (sig) => terminateProcessTree(child, sig);
     const stop = (error) => {
       if (failure) return;
       failure = error;
-      kill('SIGTERM');
-      // Companion's SIGTERM handler aborts its own separately grouped Gemini child.
-      killTimer = setTimeout(() => kill('SIGKILL'), 2000);
+      killPending = kill('SIGTERM').catch(() => {
+        failure = processFailure('SMOKE_TERMINATION_FAILED', 'Could not stop the smoke subprocess tree. Inspect running tasks.');
+        child.kill('SIGKILL');
+      });
+      // POSIX companion aborts its separately grouped Gemini child on SIGTERM.
+      if (process.platform !== 'win32') killTimer = setTimeout(() => { void kill('SIGKILL').catch(() => {}); }, 2000);
     };
     const onAbort = () => stop(processFailure('SMOKE_CANCELLED', 'Smoke test interrupted.'));
     signal?.addEventListener('abort', onAbort, { once: true });
@@ -224,12 +225,13 @@ function execute(binary, args, { cwd, env, timeoutMs = 30000, signal } = {}) {
     child.once('error', () =>
       stop(processFailure('SMOKE_EXEC_UNAVAILABLE', 'A required command could not be started.')),
     );
-    child.once('close', (code, sig) => {
+    child.once('close', async (code, sig) => {
       clearTimeout(timer);
       clearTimeout(killTimer);
       signal?.removeEventListener('abort', onAbort);
       if (failure) {
-        kill('SIGKILL');
+        await killPending;
+        if (process.platform !== 'win32') await kill('SIGKILL').catch(() => {});
         reject(failure);
       } else if (sig)
         reject(processFailure('SMOKE_PROCESS_SIGNAL', 'A smoke subprocess was terminated.'));
@@ -263,13 +265,13 @@ function within(parent, child) {
 
 export async function runLiveSmoke(options, { log = console.log } = {}) {
   if (!options.run) throw new Error('Live smoke requires explicit --run.');
-  if (process.platform === 'win32') throw new Error('Live smoke is unsupported on Windows.');
+  if (!['darwin', 'win32'].includes(process.platform)) throw new Error('Implementation smoke requires macOS or Windows.');
   const scratch = await realpath(await mkdtemp(join(tmpdir(), 'gemini-live-smoke-')));
-  await chmod(scratch, 0o700);
+  await privateDirectory(scratch);
   const repo = join(scratch, 'synthetic-repository');
   const state = join(scratch, 'private-state');
-  await mkdir(repo, { mode: 0o700 });
-  await mkdir(state, { mode: 0o700 });
+  await privateDirectory(repo);
+  await privateDirectory(state);
   const reportPath = join(scratch, 'report.json');
   const env = safeEnvironment(state);
   const controller = new AbortController();

@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { mkdtemp, writeFile, readFile, mkdir, symlink, rm, lstat } from 'node:fs/promises';
+import { mkdtemp, writeFile, readFile, mkdir, symlink, rm, lstat, link } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { execFileSync } from 'node:child_process';
@@ -56,6 +56,7 @@ test('portable paths reject traversal, aliases, Windows devices and sensitive co
     '.codex/config.toml', '.env.local', 'folder/credentials.json', 'keys/test.pem',
     '.gnupg/config', 'auth.json', 'service-account.json', 'node_modules/a.js',
     'oauth_creds.json', 'nested/google_accounts.json', 'APPLICATION_DEFAULT_CREDENTIALS.JSON',
+    '.envsecret', 'nested/.pypirc', '.boto', 'id_dsa', 'id_ecdsa',
   ]) assert.throws(() => validateProposalPath(path), undefined, path);
   for (const path of ['src/app.js', 'src/café.js', 'docs/说明.md', '.gitignore'])
     assert.equal(validateProposalPath(path), path);
@@ -110,12 +111,13 @@ test('symlink or junction ancestors and case aliases cannot redirect writes', as
   const outside = join(options.base, 'outside');
   await mkdir(outside);
   await writeFile(join(outside, 'target.js'), 'outside\n');
-  await symlink(outside, join(options.cwd, 'escape'), process.platform === 'win32' ? 'junction' : 'dir');
   const expectedFingerprint = await fingerprint(options.cwd);
+  await symlink(outside, join(options.cwd, 'escape'), process.platform === 'win32' ? 'junction' : 'dir');
   await assert.rejects(applyProposal({ ...options, expectedFingerprint, response: proposal([
     { path: 'escape/target.js', operation: 'write', content: 'bad\n' },
-  ]) }), /symlink|junction|canonical|directory/i);
+  ]) }), /symlink|junction|canonical|directory|changed/i);
   assert.equal(await readFile(join(outside, 'target.js'), 'utf8'), 'outside\n');
+  await rm(join(options.cwd, 'escape'));
   await assert.rejects(applyProposal({ ...options, expectedFingerprint, response: proposal([
     { path: 'APP.js', operation: 'write', content: 'bad\n' },
   ]) }), /alias|case/i);
@@ -133,4 +135,18 @@ test('binary existing files and oversized content cannot be replaced or deleted'
   assert.throws(() => parseProposal(proposal([
     { path: 'app.js', operation: 'write', content: 'x'.repeat(PROPOSAL_LIMITS.fileBytes + 1) },
   ])), /size|limit|large/i);
+});
+
+test('directories and shared hardlinks refuse before any proposal mutation', async (t) => {
+  const options = await fixture(t);
+  await mkdir(join(options.cwd, 'directory'));
+  await link(join(options.cwd, 'app.js'), join(options.cwd, 'alias.js'));
+  const expectedFingerprint = await fingerprint(options.cwd);
+  for (const path of ['directory', 'alias.js']) {
+    await assert.rejects(applyProposal({ ...options, expectedFingerprint, response: proposal([
+      { path: 'new.js', operation: 'write', content: 'must not be created\n' },
+      { path, operation: 'write', content: 'replacement\n' },
+    ]) }), /regular|unshared/i);
+    await assert.rejects(lstat(join(options.cwd, 'new.js')), { code: 'ENOENT' });
+  }
 });

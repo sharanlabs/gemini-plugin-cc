@@ -32,7 +32,7 @@ export function systemConfigurationDirectory(platform = process.platform) {
 
 export function getInstallBase(platform = process.platform, env = process.env) {
   return platform === 'win32'
-    ? join(env.LOCALAPPDATA || join(homedir(), 'AppData', 'Local'), 'gemini-plugin-cc')
+    ? win32.join(env.LOCALAPPDATA || win32.join(homedir(), 'AppData', 'Local'), 'gemini-plugin-cc')
     : join(homedir(), '.local', 'share', 'gemini-plugin-cc');
 }
 
@@ -139,7 +139,16 @@ export async function terminateProcessTree(child, signal = 'SIGTERM') {
     // Only the worker's current live ChildProcess is eligible. Persisted job PIDs
     // are never accepted here, preventing cancellation against a reused PID.
     if (child.exitCode !== null || child.signalCode !== null) return;
-    await fixedProcess(windowsSystemExecutable('taskkill.exe'), ['/PID', String(child.pid), '/T', '/F'], { timeoutMs: 10000 });
+    try {
+      await fixedProcess(windowsSystemExecutable('taskkill.exe'), ['/PID', String(child.pid), '/T', '/F'], { timeoutMs: 10000 });
+    } catch (error) {
+      // A short-lived CLI can finish between spawning taskkill and its process
+      // lookup. Preserve the request's original error when exit is verified.
+      if (child.exitCode !== null || child.signalCode !== null) return;
+      try { process.kill(child.pid, 0); }
+      catch (probeError) { if (probeError.code === 'ESRCH') return; }
+      throw error;
+    }
   } else {
     try { process.kill(-child.pid, signal); }
     catch (error) { if (error.code !== 'ESRCH') throw error; }

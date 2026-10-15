@@ -15,7 +15,7 @@ const SOURCE_NAMES =
 // embedded in source, nor restrict what a CLI with repository access can read.
 function sensitivePath(path) {
   return (
-    /(?:^|\/)(?:\.env[^/]*|\.ssh|\.aws|\.gnupg|\.gemini|\.claude|node_modules|\.git)(?:\/|$)/i.test(
+    /(?:^|\/)(?:\.env[^/]*|\.ssh|\.aws|\.gnupg|\.gemini|\.claude|\.codex|node_modules|\.git)(?:\/|$)/i.test(
       path,
     ) ||
     /(?:^|\/)(?:secrets?|credentials?)(?:\/|$)/i.test(path) ||
@@ -99,7 +99,7 @@ function gitEnvironment() {
 
 function git(cwd, args, { input, maxBytes = PATH_LIMIT, truncate = false } = {}) {
   return new Promise((resolvePromise, reject) => {
-    const child = spawn('git', ['-C', cwd, '-c', 'core.fsmonitor=false', ...args], {
+    const child = spawn('git', ['-C', cwd, '-c', 'core.fsmonitor=false', '-c', 'core.autocrlf=false', ...args], {
       env: gitEnvironment(),
       stdio: ['pipe', 'pipe', 'pipe'],
       windowsHide: true,
@@ -565,7 +565,7 @@ export async function removeTaskWorktree({ sourceRoot, root }) {
   if (taskRoot === source.root) throw new Error('Refusing to remove the source checkout.');
   const registered = (await gitPaths(source.root, ['worktree', 'list', '--porcelain', '-z']))
     .filter((entry) => entry.startsWith('worktree '))
-    .map((entry) => entry.slice(9));
+    .map((entry) => resolve(entry.slice(9)));
   if (!registered.includes(taskRoot))
     throw new Error('Task worktree is not registered with the source repository.');
   const gitDir = await gitText(taskRoot, ['rev-parse', '--absolute-git-dir']);

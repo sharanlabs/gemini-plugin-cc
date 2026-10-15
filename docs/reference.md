@@ -27,11 +27,11 @@ Transfer sends supplied task context; it does not import a native Claude transcr
 ## Requirements
 
 - Node.js 20 or later and Git.
-- Claude Code with plugin support. Plugin manifests are validated locally with Claude Code 2.1.296.
-- Gemini CLI **0.63.0** on `PATH`. This version is deliberately pinned because tool policy and structured output are security-sensitive integration points. Other versions are rejected until their behavior is validated.
+- Claude Code with plugin support. Use Claude Code 2.1.292 or later; local validation uses 2.1.300.
+- Gemini CLI **0.63.0**, provided by the installer or available on `PATH`. This version is deliberately pinned because tool policy and structured output are security-sensitive integration points. Other versions are rejected until their behavior is validated.
 - A Google account signed in through Gemini CLI. Use the Google account associated with your eligible subscription.
-- A POSIX platform for process-group cancellation. Windows is currently unsupported. Automated tests use local fixtures; see the live validation procedure below.
-- Editing requires macOS and the verified Gemini tool sandbox. Linux supports review/advice/investigation but refuses editing; it has no validated native-file-write boundary in this release.
+- macOS or Windows for review, advice, investigation, and isolated implementation. Linux supports reading tasks only. Automated tests use local fixtures; see the live validation procedure below.
+- macOS editing uses the verified native-tool sandbox. Windows editing validates JSON file-change proposals before the plugin writes its owned worktree. Linux editing is refused.
 
 The plugin runtime has no npm dependencies. Gemini CLI has its own dependencies and system requirements. [Google's installation guide](https://geminicli.com/docs/get-started/installation/)
 
@@ -96,7 +96,7 @@ Add `--web` when the task requires Gemini's web search and page-fetch tools. The
 
 ### Review and apply an implementation
 
-`rescue --edit` gives Gemini file-reading and file-editing tools in a linked worktree, with mandatory macOS tool sandboxing. A worktree alone is not an operating-system sandbox. The runtime refuses unsupported platforms and incompatible inherited settings rather than running edits without the required boundary. Inherited extra workspace directories and custom sandbox permissions must not widen a delegated editing task.
+`rescue --edit` uses a linked worktree. macOS enables sandboxed native file tools. Windows exposes read tools to Gemini and accepts a bounded JSON proposal; the plugin validates the whole proposal and writes only its owned worktree. A worktree alone is not an operating-system sandbox. The runtime refuses unsupported platforms and incompatible inherited settings rather than running edits without the required boundary. Inherited extra workspace directories and custom sandbox permissions must not widen a delegated editing task.
 
 Retrieve the result, inspect its patch, and run the relevant checks through Claude Code. Then explicitly apply it:
 
@@ -113,7 +113,7 @@ Application refuses an ineligible task, changed source state, or patch conflict.
 
 Cleanup removes only a clean managed worktree with its original HEAD, and refuses dirty files, ignored files, or new commits. Applying a patch to the source does not clean the retained task worktree. Preserve or reconcile its changes before cleanup; keep any useful patch and evidence. Job records and patch files remain in the private state directory after cleanup.
 
-Delegated shell execution is disabled in this release, including requests using `--allow-shell --sandbox`. Independent review reproduced writes outside the worktree through the upstream sandbox's system temporary-directory allowance. Gemini can implement the file change; run project commands and tests through Claude in the returned task worktree, inspect their results, then apply the patch explicitly. Ordinary file editing enables its required sandbox automatically. Linux editing and Windows execution are unsupported. Treat any platform, inherited-setting, custom-policy, or sandbox error as a refusal; never bypass it.
+Delegated shell execution is disabled in this release, including requests using `--allow-shell --sandbox`. Independent review reproduced writes outside the worktree through the upstream sandbox's system temporary-directory allowance. Gemini can implement the file change; run project commands and tests through Claude in the returned task worktree, inspect their results, then apply the patch explicitly. macOS file editing enables its required sandbox automatically. Windows proposals reject unsafe paths, aliases, sensitive configuration, binary files, junctions and symlinks. Linux editing is unsupported. Treat any platform, inherited-setting, custom-policy, or sandbox error as a refusal; never bypass it.
 
 ### Handoff and optional review gate
 
@@ -148,7 +148,7 @@ node plugins/gemini/scripts/companion.mjs --help
 
 Supported request fields are `command`, `cwd`, `prompt`, `focus`, `base`, `model`, `background`, `resume`, `fresh`, `edit`, `allowShell`, `allowWeb`, `sandbox`, `timeoutMs`, `jobId`, `json`, `checkAuth`, and `enabled`. `resume` takes an explicit eligible rescue or transfer job ID; it is mutually exclusive with `fresh`. `edit` is only valid for rescue. `allowShell` remains recognized for diagnostics but requests to enable it are refused. Lifecycle commands take a job ID. Gate takes `enabled:true` or `enabled:false`. Unknown fields are rejected.
 
-Jobs and output are retained in a private project-scoped directory under `~/.local/state/gemini-plugin-cc` by default. `GEMINI_PLUGIN_STATE_DIR` changes that location. Do not place it in a shared directory or commit it. The plugin runs the executable named `gemini` from `PATH`; treat that executable and your Node/Git installation as trusted dependencies.
+Jobs and output are retained in a private project-scoped directory under `~/.local/state/gemini-plugin-cc` on macOS/Linux or `%LOCALAPPDATA%/gemini-plugin-cc/state` on Windows by default. `GEMINI_PLUGIN_STATE_DIR` changes that location. Do not place it in a shared directory or commit it. The plugin first uses a valid managed installation receipt, then resolves `gemini` from `PATH`. JavaScript entry points run directly through Node without a command shell. Treat the installed runtime and Node/Git as trusted dependencies.
 
 ## Validation
 

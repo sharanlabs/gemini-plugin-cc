@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { mkdtemp, rm, chmod, access, realpath } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { fileURLToPath } from 'node:url';
+import { fileURLToPath, pathToFileURL } from 'node:url';
 import { execFileSync } from 'node:child_process';
 import { probeGemini, runGemini } from '../plugins/gemini/scripts/lib/runtime.mjs';
 const binary = fileURLToPath(new URL('./fixtures/fake-gemini.mjs', import.meta.url));
@@ -66,7 +66,7 @@ test(
   'upstream 0.63.0 policy engine enforces tool and expansion restrictions',
   { skip: !process.env.GEMINI_TEST_BUNDLE },
   async () => {
-    const { loadPoliciesFromToml, PolicyEngine } = await import(process.env.GEMINI_TEST_BUNDLE);
+    const { loadPoliciesFromToml, PolicyEngine } = await import(pathToFileURL(process.env.GEMINI_TEST_BUNDLE).href);
     for (const [policy, expected] of [
       ['readonly.toml', ['allow', 'deny', 'deny', 'deny', 'deny']],
       ['edit.toml', ['allow', 'allow', 'deny', 'deny', 'deny']],
@@ -116,7 +116,7 @@ test(
   'upstream macOS tool sandbox allows workspace writes and denies outside writes',
   { skip: !process.env.GEMINI_TEST_BUNDLE || process.platform !== 'darwin' },
   async () => {
-    const { createSandboxManager } = await import(process.env.GEMINI_TEST_BUNDLE);
+    const { createSandboxManager } = await import(pathToFileURL(process.env.GEMINI_TEST_BUNDLE).href);
     const outside = await mkdtemp(join(process.cwd(), '.gemini-sandbox-test-'));
     let prepared;
     try {

@@ -22,6 +22,8 @@ export async function git(cwd, args, { env, input } = {}) {
         '-c',
         'core.fsmonitor=false',
         '-c',
+        'core.autocrlf=false',
+        '-c',
         'diff.external=',
         ...args,
       ],

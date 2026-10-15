@@ -4,7 +4,8 @@ import { mkdtemp, mkdir, writeFile, rm, readFile, symlink, realpath } from 'node
 import { tmpdir } from 'node:os';
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { spawn } from 'node:child_process';
+import { spawn, execFile } from 'node:child_process';
+import { promisify } from 'node:util';
 import {
   assertWindowsLocalPath,
   resolveGeminiLaunch,
@@ -13,6 +14,7 @@ import {
   terminateProcessTree,
   systemConfigurationDirectory,
 } from '../plugins/gemini/scripts/lib/platform.mjs';
+const exec = promisify(execFile);
 
 test('Windows paths reject alternate namespaces, ADS and filesystem aliases', () => {
   for (const value of [
@@ -53,6 +55,31 @@ test('npm command shim resolves its verified package entry without interpreting 
   } finally { await rm(root, { recursive: true, force: true }); }
 });
 
+test('managed installation receipt resolves only the official package entry', async () => {
+  const root = await mkdtemp(join(tmpdir(), 'gemini-managed-launch-'));
+  try {
+    const packageRoot = join(root, 'runtime', 'node_modules', '@google', 'gemini-cli');
+    const entry = join(packageRoot, 'bundle', 'gemini.js');
+    await mkdir(dirname(entry), { recursive: true });
+    await writeFile(join(packageRoot, 'package.json'), JSON.stringify({ name: '@google/gemini-cli', bin: { gemini: 'bundle/gemini.js' } }));
+    await writeFile(entry, '// fixture');
+    const receipt = process.platform === 'win32'
+      ? join(root, 'localappdata', 'gemini-plugin-cc', 'install.json')
+      : join(root, '.local', 'share', 'gemini-plugin-cc', 'install.json');
+    await mkdir(dirname(receipt), { recursive: true });
+    await writeFile(receipt, JSON.stringify({ schema: 1, geminiEntry: entry, nodePath: '/must-not-execute' }));
+    const helper = new URL('../plugins/gemini/scripts/lib/platform.mjs', import.meta.url).href;
+    const script = join(root, 'probe.mjs');
+    await writeFile(script, `import { resolveGeminiLaunch } from ${JSON.stringify(helper)}; console.log(JSON.stringify(await resolveGeminiLaunch()));`);
+    const env = { ...process.env, HOME: root, USERPROFILE: root, LOCALAPPDATA: join(root, 'localappdata') };
+    const result = JSON.parse((await exec(process.execPath, [script], { env })).stdout);
+    assert.equal(result.command, process.execPath);
+    assert.deepEqual(result.argsPrefix, [await realpath(entry)]);
+    await writeFile(receipt, JSON.stringify({ schema: 1, geminiEntry: join(root, 'untrusted.mjs') }));
+    await assert.rejects(exec(process.execPath, [script], { env }));
+  } finally { await rm(root, { recursive: true, force: true }); }
+});
+
 test('private directory protection refuses links and verifies native permissions', async () => {
   const root = await mkdtemp(join(tmpdir(), 'gemini-private-platform-'));
   try {
@@ -61,7 +88,31 @@ test('private directory protection refuses links and verifies native permissions
     await protectPrivateDirectory(target);
     await verifyPrivateDirectory(target);
     await symlink(target, join(root, 'link'), process.platform === 'win32' ? 'junction' : 'dir');
-    await assert.rejects(protectPrivateDirectory(join(root, 'link')), /symlink|reparse|private directory/i);
+    await assert.rejects(protectPrivateDirectory(join(root, 'link')), { code: 'PLATFORM_BOUNDARY_FAILED' });
+  } finally { await rm(root, { recursive: true, force: true }); }
+});
+
+test('Windows directory verification rejects widened inherited access', { skip: process.platform !== 'win32' }, async () => {
+  const root = await mkdtemp(join(tmpdir(), 'gemini-private-acl-'));
+  try {
+    const target = join(root, "literal $(ignored) 'directory'");
+    await mkdir(target);
+    await protectPrivateDirectory(target);
+    await verifyPrivateDirectory(target);
+    const script = String.raw`
+      $ErrorActionPreference = 'Stop'
+      $acl = [System.IO.Directory]::GetAccessControl($env:GEMINI_PLUGIN_ACL_TEST_PATH)
+      $everyone = New-Object System.Security.Principal.SecurityIdentifier('S-1-1-0')
+      $rule = New-Object System.Security.AccessControl.FileSystemAccessRule($everyone, [System.Security.AccessControl.FileSystemRights]::Read, [System.Security.AccessControl.AccessControlType]::Allow)
+      $acl.AddAccessRule($rule)
+      [System.IO.Directory]::SetAccessControl($env:GEMINI_PLUGIN_ACL_TEST_PATH, $acl)
+    `;
+    const powershell = join(process.env.SystemRoot || 'C:\\Windows', 'System32', 'WindowsPowerShell', 'v1.0', 'powershell.exe');
+    await exec(powershell, ['-NoProfile', '-NonInteractive', '-EncodedCommand', Buffer.from(script, 'utf16le').toString('base64')],
+      { env: { ...process.env, GEMINI_PLUGIN_ACL_TEST_PATH: target } });
+    await assert.rejects(verifyPrivateDirectory(target), { code: 'PLATFORM_BOUNDARY_FAILED' });
+    await protectPrivateDirectory(target);
+    await verifyPrivateDirectory(target);
   } finally { await rm(root, { recursive: true, force: true }); }
 });
 

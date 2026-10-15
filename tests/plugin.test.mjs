@@ -23,7 +23,7 @@ const commands = [
   'advisor',
 ];
 const json = async (filename) => JSON.parse(await readFile(path.join(root, filename), 'utf8'));
-const document = (filename) => readFile(path.join(root, filename), 'utf8');
+const document = async (filename) => (await readFile(path.join(root, filename), 'utf8')).replaceAll('\r\n', '\n');
 
 test('marketplace points to the self-contained Gemini plugin', async () => {
   const marketplace = await json('.claude-plugin/marketplace.json');
